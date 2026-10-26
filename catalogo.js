@@ -1,0 +1,2996 @@
+// El Gringuito — generado 2026-10-26 20:56
+window.JR_VERSION = "2026-10-26 20:56";
+window.MARCA = window.MARCA || {"nombre":"El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
+
+
+const CART_PHONE = "5493810000000";
+
+// Escapa texto antes de insertarlo como HTML.
+// Los nombres de producto vienen de sitios externos: si uno trae
+// "<img onerror=...>" e se inyecta con innerHTML, se ejecuta en el navegador.
+function escHtml(t) {
+  return String(t == null ? "" : t)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+
+const ZONAS = {
+  tucuman_capital:  { nombre: "Tucumán capital (SMT / Tafí Viejo / Yerba Buena)", zona: 1, costoBase: 2500,  freeDesde: 15000,  kmExtra: 300  },
+  tucuman_interior: { nombre: "Tucumán — interior de la provincia",                zona: 2, costoBase: 10000, freeDesde: 50000,  kmExtra: null },
+  noa:              { nombre: "NOA (Salta, Jujuy, Catamarca, Stgo. del Estero, La Rioja)", zona: 3, costoBase: 15000, freeDesde: 100000, kmExtra: null },
+  centro:           { nombre: "Centro (Córdoba, Santa Fe, Entre Ríos)",             zona: 4, costoBase: 17000, freeDesde: null,   kmExtra: null },
+  bsas:             { nombre: "Buenos Aires / AMBA",                                zona: 4, costoBase: 17000, freeDesde: null,   kmExtra: null },
+  otro:             { nombre: "Otra provincia",                                     zona: 5, costoBase: 20000, freeDesde: null,   kmExtra: null },
+};
+
+const ORIGEN_LAT = -26.7287;
+const ORIGEN_LNG = -65.2774;
+
+let cart        = JSON.parse(sessionStorage.getItem("jrCart") || "[]");
+let zonaActual  = null;
+let costoEnvio  = 0;
+let kmDetectado = null;
+let compraDirectaActiva = false;
+let carritoAnteriorCompraDirecta = [];
+let pedidoConfirmado = false;
+
+function saveCart() { sessionStorage.setItem("jrCart", JSON.stringify(cart)); renderCart(); }
+
+function comprarAhora(btn) {
+  carritoAnteriorCompraDirecta = cart.map(function(item) {
+    return Object.assign({}, item);
+  });
+
+  compraDirectaActiva = true;
+  pedidoConfirmado = false;
+
+  const id = btn.dataset.id;
+  const name = btn.dataset.name;
+  const price = Number(btn.dataset.price) || 0;
+  const reqMin = Number(btn.dataset.reqMin) || 0;
+  const baseUnits = Number(btn.dataset.baseUnits) || 0;
+  const key = id;
+
+  cart = [{
+    key: key,
+    id: id,
+    name: name,
+    price: price,
+    reqMin: reqMin,
+    baseUnits: baseUnits,
+    pv: btn.dataset.pv || "",
+    qty: 1
+  }];
+
+  saveCart();
+
+  const panel = document.getElementById("cartPanel");
+
+  if (panel) {
+    panel.style.display = "none";
+  }
+
+  abrirCheckout();
+}
+
+function addToCartFromBtn(btn) {
+  const { id, name, price } = btn.dataset;
+  const reqMin    = Number(btn.dataset.reqMin) || 0;
+  const baseUnits = Number(btn.dataset.baseUnits) || 0;
+  const key = id;
+
+  const found = cart.find(i => i.key === key);
+
+  if (found) {
+    found.qty++;
+  } else {
+    cart.push({
+      key,
+      id,
+      name,
+      price: parseFloat(price) || 0,
+      reqMin,
+      baseUnits,
+      pv: btn.dataset.pv || "",
+      qty: 1
+    });
+  }
+
+  saveCart();
+
+  const textoOriginal = btn.dataset.textoOriginal || btn.innerHTML;
+  btn.dataset.textoOriginal = textoOriginal;
+
+  btn.innerHTML = "✓";
+  btn.style.background = "#ea580c";
+  btn.style.color = "#fff";
+
+  setTimeout(function() {
+    btn.innerHTML = textoOriginal;
+    btn.style.background = "";
+    btn.style.color = "";
+  }, 1200);
+}
+
+
+
+function changeQty(key, delta) {
+  const it = cart.find(i => i.key === key);
+  if (!it) return;
+  it.qty = Math.max(0, it.qty + delta);
+  cart = cart.filter(i => i.qty > 0);
+  saveCart();
+}
+
+function removeItem(key) { cart = cart.filter(i => i.key !== key); saveCart(); }
+function limpiarTextoCliente(str) {
+  return String(str || "")
+    .replace(/Â½/g, "½").replace(/Â¼/g, "¼").replace(/Â¾/g, "¾")
+    .replace(/Â°/g, "°").replace(/Â·/g, "·").replace(/Âº/g, "º")
+    .replace(/Ã±/g, "ñ").replace(/Ã/g, "Ñ")
+    .replace(/Ã¡/g, "á").replace(/Ã©/g, "é").replace(/Ã­/g, "í")
+    .replace(/Ã³/g, "ó").replace(/Ãº/g, "ú")
+    .replace(/Ã/g, "Á").replace(/Ã/g, "É")
+    .replace(/Ã/g, "Í").replace(/Ã/g, "Ó").replace(/Ã/g, "Ú")
+    .replace(/Â[^sw]/g, "").replace(/Ã[^sw]/g, "")
+    .replace(/s+/g, " ").trim();
+}
+
+function fmt(v) { return "$ " + Math.round(v).toLocaleString("es-AR"); }
+
+function obtenerPrecioUnitario(item) {
+  return Number(
+    item.precio_unitario ??
+    item.precio_unit ??
+    item.precio ??
+    0
+  ) || 0;
+}
+
+function obtenerSubtotalItem(item) {
+  const subtotalGuardado = Number(
+    item.subtotal ??
+    item.total_item ??
+    0
+  ) || 0;
+
+  if (subtotalGuardado > 0) {
+    return subtotalGuardado;
+  }
+
+  const precio = obtenerPrecioUnitario(item);
+  const cantidad = Number(item.cantidad) || 1;
+
+  return precio * cantidad;
+}
+
+function obtenerTotalPedido(data) {
+  const totalGuardado = Number(
+    data.total ??
+    data.monto_total ??
+    data.total_pedido ??
+    0
+  ) || 0;
+
+  if (totalGuardado > 0) {
+    return totalGuardado;
+  }
+
+  const subtotalProductos = (data.items || []).reduce(function(acumulado, item) {
+    return acumulado + obtenerSubtotalItem(item);
+  }, 0);
+
+  const costoEnvio = Number(data.costo_envio || 0) || 0;
+
+  return subtotalProductos + costoEnvio;
+}
+
+function renderCart() {
+  var _n = cart.reduce(function(s,i){return s+i.qty;},0);
+  document.getElementById("cartCount").textContent = _n;
+  var _hb = document.getElementById("cartCountHdr");
+  if (_hb) _hb.textContent = _n;
+  const itemsEl = document.getElementById("cartItems");
+  if (!itemsEl) return;
+  if (!cart.length) {
+    itemsEl.innerHTML = '<div class="cart-empty">🛒 Carrito vacío</div>';
+  } else {
+    itemsEl.innerHTML = cart.map(ii => {
+      const pctI      = ii.price <= 20000  ? 5
+                      : ii.price <= 50000  ? 10
+                      : ii.price <= 100000 ? 15
+                      : ii.price <= 200000 ? 18 : 20;
+      const descI     = Math.round(ii.price * pctI / 100);
+      const precioDesc= ii.price - descI;
+      return `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${ii.name}</div>
+          <div class="cart-item-unit">
+            <s>${fmt(ii.price)}</s> → <span style="color:#ea580c;font-weight:700">${fmt(precioDesc)}</span> c/u
+            <span style="color:#ea580c;font-size:10px">(${pctI}% off transf.)</span>
+          </div>
+          <div class="cart-item-subtotal">${fmt(ii.price * ii.qty)}</div>
+        </div>
+        <div>
+          <div class="cart-qty">
+            <button class="qty-btn" onclick="changeQty('${ii.key}',-1)">−</button>
+            <span class="qty-num">${ii.qty}</span>
+            <button class="qty-btn" onclick="changeQty('${ii.key}',+1)">+</button>
+            <button class="qty-del" onclick="removeItem('${ii.key}')" title="Eliminar">✕</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+  const subtotal = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const { pct, descuento } = calcularDescuento(subtotal);
+  const totalTransf = subtotal - descuento;
+  const pctTexto    = Math.round(pct*100);
+
+  document.getElementById("cartTotal").textContent = fmt(subtotal);
+
+  const descEl = document.getElementById("cartDescuento");
+  if (descEl) {
+    if (cart.length && descuento > 0) {
+      descEl.innerHTML = '<div style="font-size:11px;color:#ea580c;text-align:right;margin-top:2px">'
+        + 'Con transferencia: ' + fmt(totalTransf)
+        + ' <span style="color:#aaa">(' + pctTexto + '% off)</span></div>';
+    } else {
+      descEl.innerHTML = "";
+    }
+  }
+}
+
+document.getElementById("cartFab").addEventListener("click", () => {
+  const p = document.getElementById("cartPanel");
+  const open = p.style.display === "flex";
+  p.style.display = open ? "none" : "flex";
+  if (!open) renderCart();
+});
+document.getElementById("cartCloseBtn").addEventListener("click", () => {
+  document.getElementById("cartPanel").style.display = "none";
+});
+document.getElementById("clearCart").addEventListener("click", () => {
+  if (cart.length && confirm("¿Limpiar el carrito?")) { cart = []; saveCart(); }
+});
+document.getElementById("btnShareCart").addEventListener("click", () => {
+  if (!cart.length) { alert("El carrito está vacío"); return; }
+  const lineas = cart.map(i => `  • ${i.qty}x ${i.name}  =>  ${fmt(i.price*i.qty)}`).join("\n");
+  const total  = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const msg    = [
+    "*Lista de productos - " + "El Gringuito" + "*",
+    "",
+    lineas,
+    "",
+    `*Total aprox: ${fmt(total)}* (pagando con transferencia)`,
+    "",
+    "Ver catálogo completo:",
+    "https://jr93-arg.github.io/WEB-EL-GRINGUITO/"
+  ].join("\n");
+  window.open("https://wa.me/5493810000000?text="+encodeURIComponent(msg),"_blank");
+});
+
+document.getElementById("btnCheckout").addEventListener("click", () => {
+  if (!cart.length) {
+    alert("El carrito está vacío");
+    return;
+  }
+
+  // Este proceso viene desde el carrito normal.
+  compraDirectaActiva = false;
+  carritoAnteriorCompraDirecta = null;
+  pedidoConfirmado = false;
+
+  document.getElementById("cartPanel").style.display = "none";
+  abrirCheckout();
+});
+
+// ── Checkout ──
+let currentStep = 1;
+
+function tokenizar(nombre) {
+  return nombre.toLowerCase()
+    .replace(/[^a-z0-9áéíóúüñs]/gi,"").split(/s+/)
+    .filter(w => w.length > 2);
+}
+
+function similitud(a, b) {
+  const ta = new Set(tokenizar(a));
+  const tb = new Set(tokenizar(b));
+  const comunes = [...ta].filter(t => tb.has(t)).length;
+  return comunes / Math.max(ta.size, tb.size, 1);
+}
+
+function buscarEquivalenteSinMinimo(nombre) {
+  const indice = window.CATALOGO_INDEX || [];
+  return indice
+    .filter(p => !p.reqMin)
+    .map(p => ({ ...p, sim: similitud(nombre, p.name) }))
+    .filter(p => p.sim >= 0.35)
+    .sort((a,b) => b.sim - a.sim)
+    .slice(0, 3);
+}
+
+function buscarProductosMin() {
+  const q = document.getElementById("minSearch").value.toLowerCase().trim();
+  const indice = window.CATALOGO_INDEX || [];
+  const results = indice
+    .filter(p => p.reqMin && (!q || p.name.toLowerCase().includes(q)))
+    .slice(0, 8);
+  renderSugResults(results, "minSearchResults");
+}
+
+function renderSugCard(p, contenedor) {
+  const div = document.createElement("div");
+  div.className = "sug-card";
+  div.innerHTML = `
+    ${p.imgUrl ? `<img src="${p.imgUrl}" alt="${p.name}" onerror="imgFallback(this)"><div class="no-img" style="display:none;width:44px;height:44px;background:#f5f5f7;border-radius:6px"></div>` : `<div class="no-img" style="width:44px;height:44px;background:#f5f5f7;border-radius:6px"></div>`}
+    <div class="sug-card-info">
+      <div class="sug-card-name">${p.name}</div>
+      <div class="sug-card-precio">${fmt(p.precio)}</div>
+      <div class="sug-card-tag">${p.reqMin ? "Compra combinada" : "✓ Disponible desde 1 unidad"}</div>
+    </div>
+    <button class="sug-add" onclick="agregarDesdeIndice('${p.id}')">+ Agregar</button>`;
+  document.getElementById(contenedor).appendChild(div);
+}
+
+function renderSugResults(items, contenedor) {
+  const el = document.getElementById(contenedor);
+  el.innerHTML = "";
+  items.forEach(p => renderSugCard(p, contenedor));
+  if (!items.length) el.innerHTML = '<div style="font-size:12px;color:#aaa;text-align:center;padding:8px">Sin resultados</div>';
+}
+
+function agregarDesdeIndice(id) {
+  const p = (window.CATALOGO_INDEX||[]).find(x => x.id === id);
+  if (!p) return;
+  const key = p.id;
+  const found = cart.find(i => i.key === key);
+  if (found) found.qty++;
+  else cart.push({ key, id: p.id, name: p.name, price: p.precio, reqMin: p.reqMin, baseUnits: p.baseUnits, pv: p.pv||"", qty:1 });
+  saveCart();
+  // Reconstruir resumen del paso 1
+  construirResumen();
+  // Si ya llegó al mínimo, ir directo al paso 1
+  const prob = calcularProblemaMin();
+  if (!prob) {
+    irAStep(1);
+  } else {
+    // Refrescar la advertencia con el nuevo monto faltante
+    mostrarPaso0();
+  }
+}
+
+function calcularProblemaMin() {
+  const itemsMin = cart.filter(i => i.reqMin);
+  if (!itemsMin.length) return null;
+  const totalBaseMin = itemsMin.reduce((s,i) => s + (parseFloat(i.baseUnits||0) * i.qty), 0);
+  const minimo = 1000; // unidades relativas (1000 = el minimo del proveedor)
+  if (totalBaseMin >= minimo) return null;
+  const falta = minimo - totalBaseMin;
+
+  // 'falta' esta en unidades relativas, no en pesos: mostrarla tal cual decia
+  // "te faltan $ 82" cuando en realidad faltaban unos $ 4.000. Se pasa a pesos
+  // de catalogo (los que ve el cliente) con la proporcion de lo que ya tiene
+  // en el carrito de esta linea.
+  const valorCarritoMin = itemsMin.reduce((s,i) => s + (Number(i.price||0) * i.qty), 0);
+  let faltaPesos = totalBaseMin > 0
+    ? falta * (valorCarritoMin / totalBaseMin)
+    : 0;
+  faltaPesos = Math.ceil(faltaPesos / 100) * 100;   // redondeo hacia arriba, de a $100
+  return { itemsMin, totalBaseMin, falta, faltaPesos, minimo };
+}
+
+function mostrarPaso0() {
+  const prob = calcularProblemaMin();
+  if (!prob) { irAStep(1); return; }
+
+  // Construir advertencia
+  const { itemsMin, totalBaseMin, faltaPesos } = prob;
+  const warnEl = document.getElementById("minWarningText");
+  warnEl.innerHTML = `Algunos artículos de tu pedido requieren un mínimo de compra combinado.<br>
+    <strong>Te faltan aprox. ${fmt(faltaPesos)} en artículos de esta línea</strong> para poder procesar el pedido.<br>
+    Podés agregar más artículos o ver alternativas disponibles desde 1 unidad.`;
+
+  // Sugerencias de productos que completan el minimo
+  const sugEl = document.getElementById("minSugerencias");
+  sugEl.innerHTML = "";
+  itemsMin.forEach(item => {
+    const equiv = buscarEquivalenteSinMinimo(item.name);
+    if (equiv.length) {
+      const sec = document.createElement("div");
+      sec.innerHTML = `<div style="font-size:11px;font-weight:700;color:#555;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.5px">Alternativa disponible para "${escHtml(item.name)}"</div>`;
+      sugEl.appendChild(sec);
+      equiv.forEach(p => renderSugCard(p, sugEl.id));
+    }
+  });
+
+  // Buscador para completar el minimo de compra combinada
+  const buscEl = document.getElementById("minBuscador");
+  buscEl.style.display = "flex";
+  // Limpiar label anterior antes de agregar uno nuevo
+  const labelAnterior = buscEl.querySelector(".min-label");
+  if (labelAnterior) labelAnterior.remove();
+  const label = document.createElement("div");
+  label.className = "min-label";
+  label.style = "font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px";
+  label.textContent = "O agregá más artículos de esta línea";
+  buscEl.insertBefore(label, buscEl.firstChild);
+  buscarProductosMin();
+
+  // Mostrar el paso 0
+  document.querySelectorAll(".checkout-section").forEach(s => s.classList.remove("visible"));
+  document.getElementById("step0").classList.add("visible");
+  document.querySelectorAll(".step").forEach(s => { s.classList.remove("active","done"); });
+}
+
+function abrirCheckout() {
+  zonaActual = null; costoEnvio = 0; kmDetectado = null;
+  currentStep = 1;
+  construirResumen();
+  document.getElementById("checkoutModal").classList.add("open");
+  const btnGeo = document.getElementById("btnGeo");
+  if (btnGeo) { btnGeo.disabled = false; btnGeo.textContent = "📍 Detectar mi ubicación automáticamente"; }
+  const zonaRes = document.getElementById("zonaResult");
+  if (zonaRes) zonaRes.style.display = "none";
+  const selProv = document.getElementById("selProvincia");
+  if (selProv) selProv.value = "";
+  // Resetear comprobante y botón confirmar
+  const comp = document.getElementById("inpComprobante");
+  if (comp) { comp.value = ""; }
+  const placeholder = document.getElementById("comprobantePlaceholder");
+  const preview     = document.getElementById("comprobantePreview");
+  const area        = document.getElementById("comprobanteArea");
+  if (placeholder) placeholder.style.display = "block";
+  if (preview)     preview.style.display     = "none";
+  if (area)        area.style.borderColor    = "#e0e0e0";
+  const btnEnviar = document.getElementById("btnEnviar");
+  // El boton arranca habilitado: el comprobante es opcional.
+  if (btnEnviar) { btnEnviar.disabled=false; btnEnviar.style.opacity="1"; btnEnviar.style.cursor="pointer"; btnEnviar.textContent="Confirmar pedido"; }
+  const mpPagado = document.getElementById("mpPagado");
+  if (mpPagado) mpPagado.style.display = "none";
+
+  // Verificar minimo de compra combinada antes de continuar
+  const prob = calcularProblemaMin();
+  if (prob) {
+    mostrarPaso0();
+  } else {
+    irAStep(1);
+  }
+}
+
+document.getElementById("btnIgnorarMin").addEventListener("click", () => irAStep(1));
+
+function cerrarCheckout() {
+  document.getElementById("checkoutModal").classList.remove("open");
+
+  if (compraDirectaActiva && !pedidoConfirmado) {
+    cart = carritoAnteriorCompraDirecta.map(function(item) {
+      return Object.assign({}, item);
+    });
+
+    saveCart();
+  }
+
+  compraDirectaActiva = false;
+  carritoAnteriorCompraDirecta = [];
+}
+
+function irAStep(n) {
+  currentStep = n;
+  document.querySelectorAll(".checkout-section").forEach(s => s.classList.remove("visible"));
+  const sec = document.getElementById("step" + n);
+  if (sec) sec.classList.add("visible");
+  document.querySelectorAll(".step").forEach((s, i) => {
+    s.classList.toggle("active", i+1 === n);
+    s.classList.toggle("done",   i+1 < n);
+  });
+  if (n === 3) actualizarPaso3();
+  if (n === 4) actualizarPaso4();
+}
+
+function construirResumen() {
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById("orderLines").innerHTML = cart.map(i =>
+    `<div class="order-line"><span>${i.qty}x ${i.name}</span><span>${fmt(i.price*i.qty)}</span></div>`
+  ).join("");
+  document.getElementById("orderTotalAmt").textContent = fmt(total);
+}
+
+const tipoEnvioEl = () => document.querySelector(".toggle-btn.selected")?.dataset.tipo || "envio";
+
+document.querySelectorAll(".toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+  });
+});
+
+function validarDatos() {
+  let ok = true;
+    // Solo se validan los campos que existen: el DNI y el email se
+    // muestran segun lo configurado en el panel.
+    ["inpNombre","inpDNI","inpTelefono","inpEmail"].forEach(id => {
+    const el = document.getElementById(id);
+      if (!el) return;
+    const err = document.getElementById(id+"Err");
+    if (!el.value.trim()) { el.classList.add("error"); if(err) err.classList.add("visible"); ok=false; }
+    else { el.classList.remove("error"); if(err) err.classList.remove("visible"); }
+  });
+  return ok;
+}
+
+document.getElementById("btnPaso2a3").addEventListener("click", () => {
+  if (validarDatos()) irAStep(3);
+});
+
+// ── Paso 3: Envío y zona ──
+function calcularCostoEnvio(claveZona) {
+  const zona = ZONAS[claveZona];
+  if (!zona) return 0;
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  if (zona.freeDesde && total >= zona.freeDesde) return 0;
+  if (zona.zona === 1 && kmDetectado !== null) {
+    return zona.costoBase + Math.round(kmDetectado * zona.kmExtra);
+  }
+  return zona.costoBase;
+}
+
+function mostrarZona(claveZona) {
+  zonaActual = claveZona;
+  costoEnvio = calcularCostoEnvio(claveZona);
+  const zona  = ZONAS[claveZona];
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const gratis = zona.freeDesde && total >= zona.freeDesde;
+  const distTexto = kmDetectado ? ` · ${Math.round(kmDetectado)} km` : "";
+  let minimoTxt = "";
+  if (!gratis && zona.freeDesde) {
+    const falta = zona.freeDesde - total;
+    minimoTxt = `<div style="font-size:11px;color:#888;margin-top:4px">Agregá ${fmt(falta)} más para envío gratis</div>`;
+  }
+  const zonaRes = document.getElementById("zonaResult");
+  zonaRes.style.display = "block";
+  zonaRes.innerHTML = `
+    <div class="zona-detected">
+      <div class="zona-icon">📍</div>
+      <div class="zona-info">
+        <div class="zona-nombre">${zona.nombre}${distTexto}</div>
+        <div class="zona-costo">Envío: ${gratis ? "Gratis ✓" : fmt(costoEnvio)}</div>
+        ${minimoTxt}
+      </div>
+      <button class="zona-reset" onclick="resetZona()" title="Cambiar">✕</button>
+    </div>`;
+}
+
+function resetZona() {
+  zonaActual=null; costoEnvio=0; kmDetectado=null;
+  document.getElementById("zonaResult").style.display="none";
+  document.getElementById("selProvincia").value="";
+  const btn=document.getElementById("btnGeo");
+  btn.disabled=false; btn.textContent="📍 Detectar mi ubicación automáticamente";
+}
+
+function onProvinciaChange() {
+  const val = document.getElementById("selProvincia").value;
+  if (val) mostrarZona(val);
+}
+
+// ── Mapa interactivo (Leaflet) ──────────────────────────────────────────
+var _mapa = null, _marcador = null, _geoTimer = null;
+
+function calcularKm(lat, lng) {
+  var R = 6371;
+  var dLat = (lat-ORIGEN_LAT)*Math.PI/180;
+  var dLng = (lng-ORIGEN_LNG)*Math.PI/180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2)
+        + Math.cos(ORIGEN_LAT*Math.PI/180)*Math.cos(lat*Math.PI/180)
+        * Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function claveZonaPorProvincia(prov, km) {
+  prov = (prov||"").toLowerCase();
+  if (prov.indexOf("tucum") >= 0) return km <= 25 ? "tucuman_capital" : "tucuman_interior";
+  if (["salta","jujuy","catamarca","santiago","la rioja"].some(function(p){return prov.indexOf(p)>=0;})) return "noa";
+  if (["cordoba","santa fe","entre rios"].some(function(p){return prov.indexOf(p)>=0;})) return "centro";
+  if (prov.indexOf("buenos") >= 0) return "bsas";
+  return "otro";
+}
+
+function initMapa(lat, lng) {
+  var wrap = document.getElementById("mapaWrap");
+  if (!wrap || typeof L === "undefined") return;
+  wrap.classList.add("visible");
+
+  if (_mapa) {
+    _mapa.setView([lat, lng], 15);
+    _marcador.setLatLng([lat, lng]);
+    setTimeout(function(){ _mapa.invalidateSize(); }, 120);
+    actualizarDesdeMapa(lat, lng);
+    return;
+  }
+
+  _mapa = L.map("mapaUbicacion", { zoomControl: true }).setView([lat, lng], 15);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: "OpenStreetMap"
+  }).addTo(_mapa);
+
+  _marcador = L.marker([lat, lng], { draggable: true }).addTo(_mapa);
+  _marcador.on("dragend", function(e) {
+    var p = e.target.getLatLng();
+    actualizarDesdeMapa(p.lat, p.lng);
+  });
+  _mapa.on("click", function(e) {
+    _marcador.setLatLng(e.latlng);
+    actualizarDesdeMapa(e.latlng.lat, e.latlng.lng);
+  });
+
+  setTimeout(function(){ _mapa.invalidateSize(); }, 200);
+  actualizarDesdeMapa(lat, lng);
+}
+
+function actualizarDesdeMapa(lat, lng) {
+  kmDetectado = calcularKm(lat, lng);
+  var coordsEl = document.getElementById("mapaCoords");
+  if (coordsEl) {
+    coordsEl.classList.add("visible");
+    coordsEl.textContent = "A " + kmDetectado.toFixed(1) + " km del local - buscando direccion...";
+  }
+  clearTimeout(_geoTimer);
+  _geoTimer = setTimeout(function() {
+    fetch("https://nominatim.openstreetmap.org/reverse?lat="+lat+"&lon="+lng+"&format=json&addressdetails=1")
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        var a = d.address || {};
+        var clave = claveZonaPorProvincia(a.state, kmDetectado);
+        mostrarZona(clave);
+        var sel = document.getElementById("selProvincia");
+        if (sel) sel.value = clave;
+
+        var calle  = [a.road, a.house_number].filter(Boolean).join(" ");
+        var ciudad = a.city || a.town || a.village || a.suburb || "";
+        var cp     = a.postcode || "";
+        var iDir = document.getElementById("inpDireccion");
+        var iCiu = document.getElementById("inpCiudad");
+        var iCP  = document.getElementById("inpCP");
+        if (iDir && calle && !iDir.value.trim()) { iDir.value = calle; marcarOk(iDir); }
+        if (iCiu && ciudad) { iCiu.value = ciudad; marcarOk(iCiu); }
+        if (iCP && cp) { iCP.value = cp; marcarOk(iCP); }
+
+        if (coordsEl) {
+          var txt = [calle, ciudad].filter(Boolean).join(", ") || "Ubicacion seleccionada";
+          coordsEl.textContent = txt + " - a " + kmDetectado.toFixed(1) + " km del local";
+        }
+      })
+      .catch(function() {
+        mostrarZona(kmDetectado <= 25 ? "tucuman_capital" : "tucuman_interior");
+        if (coordsEl) coordsEl.textContent = "A " + kmDetectado.toFixed(1) + " km del local";
+      });
+  }, 600);
+}
+
+function validarCampoVisual(input) {
+  var f = input.closest(".field");
+  if (!f) return;
+  var v = (input.value || "").trim();
+  var ok = v.length >= 3;
+  if (input.id === "inpDNI")      ok = v.replace(/D/g,"").length >= 7;
+  if (input.id === "inpTelefono") ok = v.replace(/D/g,"").length >= 8;
+  if (input.id === "inpCP")       ok = v.length >= 4;
+  if (input.id === "inpNotas")    ok = v.length > 0;
+  f.classList.toggle("ok", ok);
+}
+
+["inpNombre","inpDNI","inpTelefono","inpNotas","inpDireccion","inpCiudad","inpCP"].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener("input", function(){ validarCampoVisual(el); });
+});
+
+function marcarOk(input) {
+  var f = input.closest(".field");
+  if (f) f.classList.add("ok");
+}
+
+function detectarUbicacion() {
+  var btn = document.getElementById("btnGeo");
+  if (!navigator.geolocation) { initMapa(ORIGEN_LAT, ORIGEN_LNG); return; }
+  btn.disabled = true;
+  btn.textContent = "Detectando ubicacion...";
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    btn.disabled = false;
+    btn.textContent = "Ubicacion detectada - ajustala en el mapa";
+    initMapa(pos.coords.latitude, pos.coords.longitude);
+  }, function() {
+    btn.disabled = false;
+    btn.textContent = "No se pudo detectar - marca en el mapa";
+    initMapa(ORIGEN_LAT, ORIGEN_LNG);
+  }, { timeout: 8000, enableHighAccuracy: true });
+}
+
+function actualizarPaso3() {
+  const esEnvio = tipoEnvioEl()==="envio";
+  document.getElementById("step3Envio").style.display  = esEnvio?"flex":"none";
+  document.getElementById("step3Retiro").style.display = esEnvio?"none":"block";
+  document.getElementById("camposDireccion").style.display = esEnvio?"flex":"none";
+  if (esEnvio && _mapa) setTimeout(function(){ _mapa.invalidateSize(); }, 150);
+}
+
+document.getElementById("btnPaso3a4").addEventListener("click", () => {
+  if (tipoEnvioEl()==="envio") {
+    if (!zonaActual) { alert("Seleccioná o detectá tu zona de envío."); return; }
+    if (!document.getElementById("inpDireccion").value.trim()) {
+      document.getElementById("inpDireccionErr").classList.add("visible"); return;
+    }
+    if (!document.getElementById("inpCiudad").value.trim()) {
+      document.getElementById("inpCiudadErr").classList.add("visible"); return;
+    }
+  } else { costoEnvio=0; }
+  irAStep(4);
+});
+
+// ── Paso 4: Pago ──
+function calcularDescuento(subtotal) {
+  // Descuento proporcional por volumen de compra (sobre precio catalogo)
+  var pct;
+  if      (subtotal <= 20000)  pct = 0.05;
+  else if (subtotal <= 50000)  pct = 0.10;
+  else if (subtotal <= 100000) pct = 0.15;
+  else if (subtotal <= 200000) pct = 0.18;
+  else                         pct = 0.20;
+  return { pct: pct, descuento: Math.round(subtotal * pct) };
+}
+
+function actualizarPaso4() {
+  const subtotal    = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const { pct, descuento } = calcularDescuento(subtotal);
+  const pctTexto    = Math.round(pct*100);
+  const totalTransf = subtotal - descuento + costoEnvio;
+  const totalMP     = subtotal + costoEnvio;
+  const esGratis    = costoEnvio===0 && tipoEnvioEl()==="envio" && zonaActual;
+  const envioTxt    = tipoEnvioEl()==="retiro" ? "Retiro en local — Gratis"
+    : esGratis ? "Envio — Gratis ✓" : fmt(costoEnvio);
+
+  const lineasDetalle = cart.map(i => {
+    const pctI   = i.price <= 20000  ? 5 : i.price <= 50000  ? 10
+                 : i.price <= 100000 ? 15 : i.price <= 200000 ? 18 : 20;
+    const descI  = Math.round(i.price * pctI / 100);
+    const precI  = i.price - descI;
+    return '<div class="resumen-linea" style="font-size:12px">' +
+      '<span>' + i.qty + 'x ' + i.name + '</span>' +
+      '<span style="text-align:right"><s style="color:#bbb">' + fmt(i.price*i.qty) + '</s><br>' +
+      '<span style="color:#ea580c">' + fmt(precI*i.qty) + ' (' + pctI + '% off)</span></span></div>';
+  }).join("");
+
+  document.getElementById("resumenFinal").innerHTML =
+    lineasDetalle +
+    '<div style="height:1px;background:#e0e0e0;margin:6px 0"></div>' +
+    '<div class="resumen-linea"><span>Subtotal lista</span><span>' + fmt(subtotal) + '</span></div>' +
+    '<div class="resumen-linea descuento"><span>Descuento transferencia (' + pctTexto + '%)</span><span style="color:#ea580c">-' + fmt(descuento) + '</span></div>' +
+    '<div class="resumen-linea envio"><span>Envio</span><span>' + envioTxt + '</span></div>';
+
+  // Transferencia: precio catálogo - descuento proporcional
+  document.getElementById("precioTransferencia").textContent = fmt(totalTransf);
+  document.getElementById("ahorroTransferencia").textContent =
+    "✓ Ahorras " + fmt(descuento) + " (" + pctTexto + "% off por transferencia)";
+  document.getElementById("pagoMonto").textContent = fmt(totalTransf);
+
+  // MP: precio catálogo sin descuento
+  document.getElementById("precioMP").textContent  = fmt(totalMP);
+  document.getElementById("recargoMP").textContent = "";
+  document.getElementById("montoBtnMP").textContent = fmt(totalMP);
+}
+document.querySelectorAll(".pago-opcion").forEach(op => {
+  op.addEventListener("click", () => {
+    document.querySelectorAll(".pago-opcion").forEach(o=>o.classList.remove("selected"));
+    op.classList.add("selected");
+    op.querySelector("input[type=radio]").checked=true;
+    const esMP = op.querySelector("input").value==="mp";
+    document.getElementById("detalleTransferencia").style.display = esMP?"none":"block";
+    document.getElementById("detalleMP").style.display            = esMP?"block":"none";
+    // Resetear estado del botón al cambiar método
+    const btn = document.getElementById("btnEnviar");
+    btn.disabled = true;
+    btn.style.opacity = ".4";
+    btn.style.cursor  = "default";
+    if (esMP) {
+      btn.textContent = "✓ Ya pagué — Confirmar por WhatsApp";
+    } else {
+      btn.textContent = "Confirmar pedido";
+      verificarComprobante();
+    }
+  });
+});
+
+function onComprobanteChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const area        = document.getElementById("comprobanteArea");
+  const placeholder = document.getElementById("comprobantePlaceholder");
+  const preview     = document.getElementById("comprobantePreview");
+  const img         = document.getElementById("comprobanteImg");
+  const nombre      = document.getElementById("comprobanteNombre");
+
+  area.style.borderColor = "#ea580c";
+  placeholder.style.display = "none";
+  preview.style.display     = "block";
+  nombre.textContent        = file.name;
+
+  if (file.type.startsWith("image/")) {
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; img.style.display = "block"; };
+    reader.readAsDataURL(file);
+  } else {
+    img.style.display = "none";
+    nombre.textContent = "📄 " + file.name;
+  }
+  // Habilitar botón
+  verificarComprobante();
+}
+
+function verificarComprobante() {
+  // El comprobante es OPCIONAL: el cliente puede confirmar el pedido y
+  // enviarlo despues desde el link que recibe por WhatsApp. Antes este
+  // boton quedaba deshabilitado sin archivo y no se podia comprar.
+  const btn = document.getElementById("btnEnviar");
+  if (!btn) return;
+  btn.disabled = false;
+  btn.style.opacity = "1";
+  btn.style.cursor  = "pointer";
+}
+
+function habilitarConfirmacionMP() {
+  // Habilitar botón 3 segundos después de tocar el link de MP
+  setTimeout(() => {
+    const btn = document.getElementById("btnEnviar");
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    btn.style.cursor  = "pointer";
+    const mpPagado = document.getElementById("mpPagado");
+    if (mpPagado) mpPagado.style.display = "block";
+  }, 3000);
+}
+
+document.getElementById("btnCopyAlias").addEventListener("click", () => {
+  navigator.clipboard.writeText((document.getElementById("aliasTransferencia")||{}).textContent || "COMPLETAR.ALIAS").then(() => {
+    const b=document.getElementById("btnCopyAlias");
+    b.textContent="✓ Copiado"; setTimeout(()=>b.textContent="Copiar",1500);
+  });
+});
+
+// ── Envío final ──
+document.getElementById("btnEnviar").addEventListener("click", async () => {
+  const btn = document.getElementById("btnEnviar");
+  btn.disabled=true; btn.textContent="Enviando...";
+  try {
+    const tipo   = tipoEnvioEl();
+    const nombre = document.getElementById("inpNombre").value.trim();
+    const dniEl  = document.getElementById("inpDNI");
+    const dni    = dniEl ? dniEl.value.replace(/[.-s]/g,"").trim() : "";
+    const mailEl = document.getElementById("inpEmail");
+    const email  = mailEl ? mailEl.value.trim() : "";
+    const tel    = document.getElementById("inpTelefono").value.trim();
+    const notas      = document.getElementById("inpNotas").value.trim();
+    const dir    = tipo==="envio" ? document.getElementById("inpDireccion").value.trim() : "";
+    const ciudad = tipo==="envio" ? document.getElementById("inpCiudad").value.trim() : "";
+    const cp     = tipo==="envio" ? document.getElementById("inpCP").value.trim() : "";
+    const metodo = document.querySelector('input[name="metodoPago"]:checked')?.value||"transferencia";
+    const esMP   = metodo==="mp";
+
+    const subtotal   = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const { pct: pctEnv, descuento: descEnv } = calcularDescuento(subtotal);
+    const pctTxt     = Math.round(pctEnv*100);
+    const descuentoFinal = esMP ? 0 : descEnv;
+    const totalFinal = subtotal - descuentoFinal + costoEnvio;
+    const direccion  = tipo==="retiro" ? "Retiro en local"
+      : [dir, ciudad, cp?"CP "+cp:"", zonaActual?ZONAS[zonaActual]?.nombre:""].filter(Boolean).join(", ");
+    const fecha = new Date().toLocaleString("es-AR");
+
+    // Limpiar caracteres especiales que se corrompen en WhatsApp
+    function limpiarTexto(str) {
+      return String(str || "")
+        .replace(/″|ʺ/g, '"')   // pulgadas tipográficas → comilla
+        .replace(/[‘’]/g, "'")  // comillas simples curvas
+        .replace(/[“”]/g, '"')  // comillas dobles curvas
+        .replace(/�/g, '')           // caracter de reemplazo UTF-8
+        .replace(/â[^ws]/gi, '"')       // artefacto â + símbolo = pulgadas mal codificadas
+        .trim();
+    }
+
+    const comprobanteInput = document.getElementById("inpComprobante");
+    const tieneComprobante = comprobanteInput && comprobanteInput.files && comprobanteInput.files.length > 0;
+      // Se guarda la referencia al archivo ACA, no dentro del callback: para
+      // cuando responde la API el formulario ya puede haberse reiniciado y
+      // comprobanteInput.files quedaria vacio.
+      const archivoComprobante = tieneComprobante ? comprobanteInput.files[0] : null;
+        console.log("[checkout] input tiene archivo:", tieneComprobante);
+      const nombreComprobante = archivoComprobante ? archivoComprobante.name : "";
+
+    const lineas = cart.map(i => `  - ${i.qty}x ${limpiarTexto(i.name)}  =>  ${fmt(i.price*i.qty)}`).join("\n");
+    const msg = [
+      "*Nuevo pedido - " + "El Gringuito" + "*","",
+      `Cliente:  ${nombre}`,`DNI:      ${dni}`,`Telefono: ${tel}`,`Entrega:  ${direccion}`,
+      notas?`Notas:    ${notas}`:null,"",
+      "*Productos:*", lineas,"",
+      `Subtotal: ${fmt(subtotal)}`,
+      costoEnvio>0?`Envio:    ${fmt(costoEnvio)}`:`Envio:    Gratis`,
+      esMP?`Metodo:   Mercado Pago / Tarjeta`:`Metodo:   Transferencia bancaria`,
+      `*Total: ${fmt(totalFinal)}*`,"",
+      esMP
+        ?"_El pago fue realizado por Mercado Pago._"
+        :tieneComprobante
+          ?"_Comprobante enviado desde la web._"
+          :"_Cuando transfieras, envianos el comprobante desde el link de abajo._"
+    ].filter(l=>l!==null).join("\n");
+
+    window.open("https://wa.me/"+CART_PHONE+"?text="+encodeURIComponent(msg),"_blank");
+
+    const filas = cart.map(i=>({
+      fecha, cliente:nombre, dni, email, telefono:tel, producto:i.name,
+      proveedor:(i.pv||"-")+" "+(i.id||""), cantidad:i.qty,
+      precio_unit:i.price, subtotal:i.price*i.qty,
+      total:totalFinal, direccion, notas,
+      metodo_pago:esMP?"Mercado Pago":"Transferencia",
+      costo_envio:costoEnvio, estado:"Pendiente verificacion"
+    }));
+    registrarEnSheets(filas).then(function(nroPedido) {
+      // Si el cliente adjunto el comprobante en el checkout, se sube ahora
+      // que ya tenemos el numero de pedido. Antes solo se mencionaba el
+      // nombre del archivo en el WhatsApp y habia que adjuntarlo a mano.
+        console.log("[checkout] pedido:", nroPedido, "· archivo adjunto:",
+                    archivoComprobante ? archivoComprobante.name : "ninguno");
+        if (nroPedido && archivoComprobante) {
+        subirComprobante(nroPedido, archivoComprobante);
+      }
+
+      var linkTracking = nroPedido
+        ? "https://jr93-arg.github.io/WEB-EL-GRINGUITO/seguimiento.html?pedido=" + nroPedido
+        : null;
+      var subHTML = esMP
+        ? "Tu pedido fue registrado.<br>Total a pagar: <strong>" + fmt(totalFinal) + "</strong>"
+        : "Tu pedido fue registrado.<br>Total a transferir: <strong>" + fmt(totalFinal) + "</strong>";
+      document.getElementById("confirmSub").innerHTML = subHTML;
+
+      if (linkTracking) {
+        var linkEl = document.getElementById("confirmTracking");
+        if (linkEl) {
+          linkEl.style.display = "";
+          linkEl.querySelector(".tracking-nro").textContent = nroPedido;
+          linkEl.querySelector(".tracking-link").href = linkTracking;
+          linkEl.querySelector(".tracking-link").textContent = linkTracking;
+          linkEl.querySelector(".tracking-copy").onclick = function() {
+            navigator.clipboard.writeText(linkTracking).then(function(){
+              linkEl.querySelector(".tracking-copy").textContent = "Copiado!";
+              setTimeout(function(){ linkEl.querySelector(".tracking-copy").textContent = "Copiar link"; }, 2000);
+            });
+          };
+          linkEl.querySelector(".tracking-wa").onclick = function() {
+            var msgWA = encodeURIComponent(
+            "Hola " + nombre.split(" ")[0] + "! Tu pedido " + nroPedido + " fue registrado en " + "El Gringuito" + ".\n\n" +
+            "Segui el estado de tu compra en:\n" + linkTracking + "\n\n" +
+            "Total: " + fmt(totalFinal) + "\n" +
+            "Cuando transfieras, envianos el comprobante desde aca:\n" +
+            "https://jr93-arg.github.io/WEB-EL-GRINGUITO/comprobante/?p=" + nroPedido + "\n\n" +
+            "Nos contactaremos para coordinar pago y entrega."
+          );
+          window.open("https://wa.me/" + tel.replace(/\D/g,"") + "?text=" + msgWA, "_blank");
+          };
+        }
+      }
+      // Solo se confirma si el pedido quedo registrado de verdad.
+      // Antes decia "confirmado" aunque la API fallara.
+      if (!nroPedido) {
+        document.getElementById("confirmSub").innerHTML =
+          '<span style="color:#dc2626">No pudimos registrar el pedido.</span><br>' +
+          'Escribinos por WhatsApp y lo tomamos a mano.';
+      }
+    }).catch(function(e) {
+      console.error("Error registrando el pedido:", e);
+      document.getElementById("confirmSub").innerHTML =
+        '<span style="color:#dc2626">No pudimos registrar el pedido.</span><br>' +
+        'Escribinos por WhatsApp y lo tomamos a mano.';
+    });
+    pedidoConfirmado = true;
+    irAStep(5);
+  } catch(err) {
+    console.error("Error:",err); alert("Hubo un error. Intentá de nuevo.");
+  } finally {
+    btn.disabled=false; btn.textContent="Confirmar pedido";
+  }
+});
+
+const API_URL   = "https://gringuito-api-production.up.railway.app/pedido";
+// El token de la API no va en el JS publico: seria visible para cualquiera.
+
+// Sube el comprobante que el cliente adjunto en el checkout.
+// No bloquea la confirmacion: si falla, el cliente igual tiene el link
+// para mandarlo despues.
+function subirComprobante(nroPedido, archivo) {
+  console.log("[comprobante] inicio →", nroPedido,
+              archivo ? archivo.name + " (" + archivo.type + ", " + archivo.size + " bytes)" : "SIN ARCHIVO");
+  if (!archivo) return;
+
+  var permitidos = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  if (permitidos.indexOf(archivo.type) === -1) {
+    console.error("[comprobante] tipo no permitido:", archivo.type);
+    return;
+  }
+  if (archivo.size > 5 * 1024 * 1024) {
+    console.error("[comprobante] supera los 5 MB:", archivo.size);
+    return;
+  }
+
+  var lector = new FileReader();
+  lector.onerror = function() { console.error("[comprobante] no se pudo leer el archivo"); };
+  lector.onload = function(ev) {
+    var b64 = String(ev.target.result || "").split(",")[1] || "";
+    console.log("[comprobante] leído:", b64.length, "caracteres base64");
+    if (!b64) { console.error("[comprobante] quedó vacío al leerlo"); return; }
+
+    var url = "https://gringuito-api-production.up.railway.app/comprobante/" + encodeURIComponent(nroPedido);
+    console.log("[comprobante] enviando a", url);
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archivo: b64, nombre: archivo.name })
+    })
+    .then(function(r) {
+      console.log("[comprobante] HTTP", r.status);
+      return r.json();
+    })
+    .then(function(d) {
+      if (d.ok) console.log("[comprobante] ✓ guardado con id", d.id);
+      else console.error("[comprobante] rechazado:", d.error);
+    })
+    .catch(function(e) { console.error("[comprobante] error de red:", e.message); });
+  };
+  lector.readAsDataURL(archivo);
+}
+
+async function registrarEnSheets(filas) {
+  try {
+    if (!Array.isArray(filas) || filas.length === 0) {
+      console.error("No hay datos para registrar");
+      return false;
+    }
+
+    const totalPedido = Number(filas[0].total) || 0;
+    const costoEnvioPedido = Number(filas[0].costo_envio) || 0;
+
+    const payload = {
+      cliente: filas[0].cliente,
+      dni: filas[0].dni,
+      telefono: filas[0].telefono,
+      direccion: filas[0].direccion,
+      notas: filas[0].notas,
+
+      total: totalPedido,
+      monto_total: totalPedido,
+      total_pedido: totalPedido,
+
+      costo_envio: costoEnvioPedido,
+      metodo_pago: filas[0].metodo_pago || "",
+
+      items: filas.map(function(f) {
+        const precio = Number(f.precio_unit) || 0;
+        const cantidad = Number(f.cantidad) || 1;
+        const subtotalItem = Number(f.subtotal) || precio * cantidad;
+
+        return {
+          producto: f.producto,
+          proveedor: f.proveedor,
+          cantidad: cantidad,
+
+          precio_unit: precio,
+          precio_unitario: precio,
+          precio: precio,
+
+          subtotal: subtotalItem,
+          total_item: subtotalItem
+        };
+      })
+    };
+
+    console.log("Pedido enviado:", payload);
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    console.log("Respuesta del servidor:", data);
+
+    if (!data.ok) {
+      console.error("API rechazó:", JSON.stringify(data));
+      return false;
+    }
+
+    return data.nroPedido || false;
+
+  } catch (e) {
+    console.error("Error API:", e);
+    return false;
+  }
+}
+
+
+
+document.getElementById("btnConfirmClose").addEventListener("click", () => {
+  pedidoConfirmado = true;
+
+  document.getElementById("checkoutModal").classList.remove("open");
+
+  cart = [];
+  saveCart();
+
+  compraDirectaActiva = false;
+  carritoAnteriorCompraDirecta = null;
+  pedidoConfirmado = false;
+});
+document.getElementById("checkoutModal").addEventListener("click", e => {
+  if (e.target===document.getElementById("checkoutModal")) cerrarCheckout();
+});
+document.querySelectorAll(".btn-back").forEach(btn => {
+  btn.addEventListener("click", () => irAStep(parseInt(btn.dataset.to)));
+});
+
+renderCart();
+  
+
+const searchInput = document.getElementById("buscarMobile")
+  || document.getElementById("buscarDesktop");
+
+// Sincronizar los 2 inputs de búsqueda (desktop y mobile)
+["buscarMobile","buscarDesktop"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", () => {
+    const q = el.value;
+    ["buscarMobile","buscarDesktop"].forEach(sid => {
+      const s = document.getElementById(sid);
+      if (s && s !== el) s.value = q;
+    });
+    filtrar();
+  });
+});
+
+const noResults = document.getElementById("noResults");
+const allSections = Array.from(document.querySelectorAll("[data-section]"));
+let catActiva     = "Todos";
+
+function filtrarPorTermino(termino) {
+  catActiva = "Todos";
+  document.querySelectorAll(".cat-pill").forEach(function(p){ p.classList.remove("active"); });
+  ["buscarDesktop","buscarMobile"].forEach(function(id){
+    var inp = document.getElementById(id);
+    if (inp) inp.value = termino;
+  });
+  filtrar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function filtrar() {
+  const q = getQuery();
+  const secRecientes  = document.getElementById("sec-recientes");
+  const secDestacados = document.getElementById("sec-destacados");
+  const secNovedades  = document.querySelector(".novedades-wrap");
+  const grid          = document.getElementById("gridPrincipal");
+  const titulo        = document.getElementById("tituloGrilla");
+  const contador      = document.getElementById("contadorGrilla");
+  const esTodos       = catActiva === "Todos" && !q && !_precioMin && !_precioMax;
+
+  // Con una busqueda o filtro activo, la portada, los iconos de categorias y
+  // la barra de beneficios solo estorban: empujaban los resultados fuera de
+  // la pantalla (en el celular no se veia ninguno sin hacer scroll).
+  const estabaFiltrando = document.body.classList.contains("filtrando");
+  document.body.classList.toggle("filtrando", !esTodos);
+  const btnLimpiar = document.getElementById("btnLimpiar");
+  if (btnLimpiar) btnLimpiar.hidden = esTodos;
+  // Al empezar a filtrar se vuelve arriba, donde ahora estan los resultados
+  if (!esTodos && !estabaFiltrando && window.scrollY > 0) window.scrollTo({ top: 0 });
+
+  // Novedades y destacados: solo en la vista principal sin filtros
+  if (secNovedades)  secNovedades.style.display  = esTodos ? "" : "none";
+  if (secDestacados) secDestacados.style.display = esTodos ? "" : "none";
+
+  if (!grid) return;
+  if (secRecientes) secRecientes.style.display = "";
+
+  // Filtrar las cards (una sola grilla, sin duplicados).
+  // Las que pasan el filtro quedan en _coinciden; se van mostrando por
+  // tandas de LOTE para no pintar 1700 tarjetas de una sola vez.
+  const cards = grid.children;
+  _coinciden = [];
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i];
+    const cat  = card.dataset.cat || "";
+    let mostrar = (catActiva === "Todos" || cat === catActiva);
+    if (mostrar && q) {
+      const nombre = (card.querySelector(".card-name")?.textContent || "").toLowerCase();
+      mostrar = nombre.includes(q);
+    }
+    if (mostrar && (_precioMin || _precioMax)) {
+      const pr = precioDeCard(card);
+      if (_precioMin && pr < _precioMin) mostrar = false;
+      if (_precioMax && pr > _precioMax) mostrar = false;
+    }
+    card.classList.add("hidden");
+    if (mostrar) _coinciden.push(card);
+  }
+  const visible = _coinciden.length;
+
+  // Encabezado según el filtro activo
+  if (titulo) {
+    const base = catActiva === "Todos" ? "Todos los productos" : catActiva;
+    titulo.childNodes[0].nodeValue = q ? ('Resultados para "' + q + '" ') : (base + " ");
+  }
+  if (contador) contador.textContent = "(" + visible + ")";
+
+  // Ordenar lo que coincide
+  if (_sortActual !== "novedad" && visible > 1) {
+    const nombre = c => c.querySelector(".card-name")?.textContent || "";
+    _coinciden.sort((a, b) => {
+      if (_sortActual === "precio-asc")  return precioDeCard(a) - precioDeCard(b);
+      if (_sortActual === "precio-desc") return precioDeCard(b) - precioDeCard(a);
+      if (_sortActual === "nombre")      return nombre(a).localeCompare(nombre(b));
+      return 0;
+    });
+    const frag = document.createDocumentFragment();
+    _coinciden.forEach(c => frag.appendChild(c));
+    grid.appendChild(frag);
+  }
+
+  // Mostrar la primera tanda
+  _mostradas = 0;
+  mostrarLote();
+
+  if (secRecientes) secRecientes.style.display = visible === 0 ? "none" : "";
+  noResults.style.display = visible === 0 ? "block" : "none";
+}
+
+// ── Mostrar el catálogo por tandas ───────────────────────────────────────────
+// Antes se pintaban las 1700 tarjetas juntas y el scroll se trababa en
+// teléfonos modestos. Ahora entran de a LOTE, por botón o al llegar al final.
+var LOTE = 60;
+var _coinciden = [];
+var _mostradas = 0;
+var _precioMin = 0;
+var _precioMax = 0;
+
+function precioDeCard(c) {
+  const t = c.querySelector(".card-price")?.textContent || "0";
+  return parseFloat(t.replace(/[^0-9]/g, "")) || 0;
+}
+
+function mostrarLote() {
+  const hasta = Math.min(_mostradas + LOTE, _coinciden.length);
+  for (let i = _mostradas; i < hasta; i++) _coinciden[i].classList.remove("hidden");
+  _mostradas = hasta;
+
+  const btn = document.getElementById("verMas");
+  if (!btn) return;
+  const quedan = _coinciden.length - _mostradas;
+  btn.style.display = quedan > 0 ? "" : "none";
+  btn.textContent = quedan > LOTE
+    ? "Ver más productos (" + quedan + " restantes)"
+    : "Ver los últimos " + quedan;
+}
+
+function filtrarPrecio(min, max, el) {
+  _precioMin = min; _precioMax = max;
+  const menu = document.getElementById("precioMenu");
+  if (menu) menu.querySelectorAll(".sort-item").forEach(i => i.classList.remove("active"));
+  if (el) el.classList.add("active");
+  const lbl = document.getElementById("precioLabel");
+  if (lbl) lbl.textContent = (!min && !max) ? "Precio" : (el ? el.textContent.trim() : "Precio");
+  if (menu) menu.classList.remove("open");
+  filtrar();
+  const sec = document.getElementById("sec-recientes");
+  if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Vuelve a la vista principal: sin busqueda, categoria ni precio.
+function limpiarFiltros() {
+  _precioMin = 0; _precioMax = 0;
+  const lbl = document.getElementById("precioLabel");
+  if (lbl) lbl.textContent = "Precio";
+  document.querySelectorAll("#precioMenu .sort-item").forEach((i, n) => i.classList.toggle("active", n === 0));
+  const selCat = document.getElementById("searchCat");
+  if (selCat) selCat.value = "Todos";
+  seleccionarCat("Todos", document.querySelector('.cat-dropdown-item[data-cat="Todos"]'));
+}
+
+function togglePrecioMenu() {
+  const m = document.getElementById("precioMenu");
+  if (m) m.classList.toggle("open");
+  // Cerrar los otros menús desplegables
+  const s = document.getElementById("sortMenu");
+  if (s) s.classList.remove("open");
+  const c = document.getElementById("catDropdownMenu");
+  if (c) c.classList.remove("open");
+}
+
+if (searchInput) searchInput.addEventListener("input", filtrar);
+
+// "Ver más" y carga automática al llegar al final de la tanda
+(function () {
+  const btn = document.getElementById("verMas");
+  if (!btn) return;
+  btn.addEventListener("click", mostrarLote);
+
+  // Primera pasada: sin esto la carga inicial mostraria las 1700 tarjetas,
+  // porque filtrar() solo se disparaba al buscar u ordenar.
+  filtrar();
+  // Si el navegador lo soporta, la tanda siguiente entra sola al acercarse
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entradas) {
+      if (entradas[0].isIntersecting && btn.style.display !== "none") mostrarLote();
+    }, { rootMargin: "600px" }).observe(btn);
+  }
+})();
+
+function getQuery() {
+  return (document.getElementById("buscarDesktop") || document.getElementById("buscarMobile"))?.value.toLowerCase().trim() || "";
+}
+
+// Dropdown de categorías
+var _sortActual = "novedad";
+
+// ── Carrusel del hero ──────────────────────────────────────────────────
+(function() {
+  var slider = document.getElementById("heroSlider");
+  if (!slider) return;
+  var slides = slider.querySelectorAll(".hero-slide");
+  var dots   = slider.querySelectorAll(".hero-dot");
+  if (slides.length < 2) return;
+
+  var actual = 0, timer = null;
+
+  function mostrar(i) {
+    actual = (i + slides.length) % slides.length;
+    for (var k = 0; k < slides.length; k++) {
+      slides[k].classList.toggle("on", k === actual);
+      if (dots[k]) dots[k].classList.toggle("on", k === actual);
+    }
+  }
+  function arrancar() { timer = setInterval(function(){ mostrar(actual + 1); }, 4000); }
+  function frenar()   { clearInterval(timer); }
+
+  for (var d = 0; d < dots.length; d++) {
+    (function(idx) {
+      dots[idx].addEventListener("click", function() {
+        frenar(); mostrar(idx); arrancar();
+      });
+    })(d);
+  }
+  slider.addEventListener("mouseenter", frenar);
+  slider.addEventListener("mouseleave", arrancar);
+  arrancar();
+})();
+
+// Si una imagen no carga, muestra el placeholder que va al lado
+function imgFallback(el) {
+  el.style.display = "none";
+  var ph = el.nextElementSibling;
+  if (ph && ph.classList.contains("no-img")) ph.style.display = "flex";
+}
+
+function toggleCart() {
+  var p = document.getElementById("cartPanel");
+  if (p) p.classList.toggle("open");
+}
+
+function irADestacados() {
+  seleccionarCat("Todos");
+  var el = document.getElementById("sec-destacados");
+  if (el) setTimeout(function(){ el.scrollIntoView({behavior:"smooth", block:"start"}); }, 80);
+}
+
+function irANovedades() {
+  seleccionarCat("Todos");
+  var el = document.querySelector(".novedades-wrap") || document.getElementById("sec-recientes");
+  if (el) setTimeout(function(){ el.scrollIntoView({behavior:"smooth", block:"start"}); }, 80);
+}
+
+function toggleSortMenu() {
+  var m = document.getElementById("sortMenu");
+  if (m) m.classList.toggle("open");
+  // Cerrar los otros menús desplegables
+  var cm = document.getElementById("catDropdownMenu");
+  if (cm) cm.classList.remove("open");
+  var pm = document.getElementById("precioMenu");
+  if (pm) pm.classList.remove("open");
+}
+
+function ordenarPor(tipo, el) {
+  _sortActual = tipo;
+  document.querySelectorAll(".sort-item").forEach(function(i){ i.classList.remove("active"); });
+  if (el) el.classList.add("active");
+  document.getElementById("sortMenu").classList.remove("open");
+  filtrar();
+}
+
+// Cerrar sort menu al hacer click fuera
+document.addEventListener("click", function(e) {
+  var sd = document.getElementById("sortDropdown");
+  if (sd && !sd.contains(e.target)) {
+    var m = document.getElementById("sortMenu");
+    if (m) m.classList.remove("open");
+  }
+});
+
+function toggleCatMenu() {
+  const btn  = document.getElementById("catDropdownBtn");
+  const menu = document.getElementById("catDropdownMenu");
+  btn.classList.toggle("open");
+  menu.classList.toggle("open");
+}
+
+function seleccionarCat(cat, el) {
+  catActiva = cat;
+  // Marcar activo
+  document.querySelectorAll(".cat-dropdown-item").forEach(i => i.classList.remove("active"));
+  if (el) el.classList.add("active");
+  // Cerrar menú
+  document.getElementById("catDropdownBtn").classList.remove("open");
+  document.getElementById("catDropdownMenu").classList.remove("open");
+  // Limpiar búsqueda
+  ["buscar","buscarMobile","buscarDesktop"].forEach(id => {
+    const s = document.getElementById(id); if (s) s.value = "";
+  });
+  filtrar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Cerrar dropdown al clickear afuera
+document.addEventListener("click", e => {
+  const dd = document.getElementById("catDropdown");
+  if (dd && !dd.contains(e.target)) {
+    document.getElementById("catDropdownBtn")?.classList.remove("open");
+    document.getElementById("catDropdownMenu")?.classList.remove("open");
+  }
+});
+
+// Botón volver arriba
+const btnTop = document.getElementById("btnTop");
+window.addEventListener("scroll", () => {
+  btnTop.classList.toggle("visible", window.scrollY > 400);
+});
+btnTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+// Más vistos
+const MV_KEY     = "jrMasVistos";
+const MV_MOSTRAR = 8;
+const API_MV     = "https://gringuito-api-production.up.railway.app";
+
+function getMasVistos() {
+  try { return JSON.parse(sessionStorage.getItem(MV_KEY)||"{}"); } catch { return {}; }
+}
+
+function registrarVista(id, nombre, precio, imagen) {
+  const mv = getMasVistos();
+  mv[id] = (mv[id]||0) + 1;
+  sessionStorage.setItem(MV_KEY, JSON.stringify(mv));
+  fetch(API_MV + "/vista", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, nombre: nombre||"", precio: precio||"", imagen: imagen||"" })
+  }).catch(() => {});
+  renderMasVistos();
+  if (typeof renderDestacados === "function") renderDestacados();
+}
+
+function fmtMV(v) { return "$ " + Math.round(v).toLocaleString("es-AR"); }
+
+function renderMasVistos() { /* removida */ }
+
+// El ranking de vistas viene embebido en window.VISTAS_TOP, generado al
+// construir el sitio. Antes se pedia a /vistas-top con el token de la API
+// escrito aca, lo que dejaba la credencial visible en el JS publico.
+
+// b64ToUtf8 se define inline en index.html antes del indice de productos.
+
+// Modal de producto
+function abrirProductoCard(el) {
+  var b64 = el.dataset.prod;
+  if (!b64) return;
+  try {
+    abrirProducto(b64ToUtf8(b64));
+  } catch(e) { console.error("Error abriendo producto:", e); }
+}
+
+function codigoInterno(raw) {
+  var s = String(raw == null ? "" : raw);
+  if (/^d+$/.test(s)) return "GR-" + s;
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return "GR-" + (h % 100000).toString().padStart(5, "0");
+}
+
+function cambiarQtyModal(delta) {
+  var el = document.getElementById("prodQty");
+  if (!el) return;
+  var v = parseInt(el.value, 10) || 1;
+  v = Math.max(1, Math.min(99, v + delta));
+  el.value = v;
+}
+
+// El boton "atras" del celular tiene que cerrar el producto, no sacar al
+// cliente del sitio: al abrir se agrega una entrada al historial y popstate
+// cierra el modal.
+var _prodEnHistorial = false;
+window.addEventListener("popstate", function() {
+  var ov = document.getElementById("prodOverlay");
+  if (ov && ov.classList.contains("open")) { _prodEnHistorial = false; cerrarProducto(true); }
+});
+
+function abrirProducto(dataStr) {
+  var p;
+  try { p = JSON.parse(dataStr); } catch(e) { return; }
+
+  if (!_prodEnHistorial) {
+    try { history.pushState({ jrProd: 1 }, ""); _prodEnHistorial = true; } catch(e) {}
+  }
+
+  const precioConDesc = p.precioConDesc || Math.round((p.precioCatalogo||0)*0.95);
+  const precioTexto   = fmtMV(precioConDesc);
+
+  // Registrar vista con datos del producto para el preview de WhatsApp
+  registrarVista(p.id, p.name, precioTexto, p.imgUrl||"");
+
+  document.getElementById("prodNombre").textContent = limpiarTextoCliente(p.name);
+  document.getElementById("prodPrecioTransf").textContent = precioTexto;
+  document.getElementById("prodPrecioMP").innerHTML       =
+    'Precio de lista: <s>' + fmtMV(p.precioCatalogo) + '</s>';
+
+  // Badges
+  var badgesEl = document.getElementById("prodBadges");
+  if (badgesEl) {
+    var bh = '';
+    if (p.pctIndTexto) bh += '<span class="pb pb-nuevo">' + p.pctIndTexto + '% OFF</span>';
+    if (precioConDesc >= 15000) bh += '<span class="pb pb-envio">Envio gratis en SMT</span>';
+    bh += '<span class="pb pb-stock">Disponible 24-48 hs</span>';
+    badgesEl.innerHTML = bh;
+  }
+
+  // Meta: proveedor
+  var metaEl = document.getElementById("prodMeta");
+  if (metaEl) {
+    metaEl.innerHTML = '<span>Codigo: <strong>' + codigoInterno(p.id) + '</strong></span>'
+      + '<span class="prod-meta-sep"></span>'
+      + '<span>Vendido por <strong>' + "El Gringuito" + '</strong></span>';
+  }
+
+  // Cuotas
+  var cuotaBox = document.getElementById("prodCuotaBox");
+  var cuotaTxt = document.getElementById("prodCuotaTxt");
+  if (cuotaBox && cuotaTxt) {
+    if ((p.precioCatalogo||0) >= 50000) {
+      cuotaBox.style.display = "inline-flex";
+      cuotaTxt.textContent = "Hasta 6 cuotas de " + fmtMV(Math.round(p.precioCatalogo/6));
+    } else {
+      cuotaBox.style.display = "none";
+    }
+  }
+
+  var qtyEl = document.getElementById("prodQty");
+  if (qtyEl) qtyEl.value = 1;
+
+  // Mostrar ahorro claro
+  var ahorroEl = document.getElementById("prodAhorro");
+  if (ahorroEl && p.precioCatalogo && p.precioConDesc) {
+    var ahorro = p.precioCatalogo - p.precioConDesc;
+    ahorroEl.innerHTML =
+      '<span style="display:inline-flex;align-items:center;gap:5px;background:#ffedd5;color:#9a3412;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700">'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+      + 'Ahorrás ' + fmtMV(ahorro) + ' (' + (p.pctIndTexto||5) + '% off) con transferencia'
+      + '</span>';
+  }
+
+  // Info de descuento por volumen
+  const descInfoEl = document.getElementById("prodDescInfo");
+  if (descInfoEl) {
+    const pc = p.precioCatalogo || 0;
+    const pctInd = p.pctIndTexto || 5;
+    // Escala de descuento por monto del carrito. El tramo de este producto
+    // queda resaltado. (Mismos cortes que usa el carrito.)
+    var tramos = [
+      { txt: "Hasta $20 mil",  pct: 5,  max: 20000 },
+      { txt: "$20 a $50 mil", pct: 10, max: 50000 },
+      { txt: "$50 a $100 mil", pct: 15, max: 100000 },
+      { txt: "$100 a $200 mil", pct: 18, max: 200000 },
+      { txt: "Más de $200 mil", pct: 20, max: Infinity }
+    ];
+    var actual = -1;
+    for (var t = 0; t < tramos.length; t++) { if (pc <= tramos[t].max) { actual = t; break; } }
+    descInfoEl.innerHTML = pc > 0
+      ? '<div class="desc-info">'
+        + '<div class="desc-info-t">'
+        +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.2"/></svg>'
+        +   'Sumá productos y ahorrá más'
+        + '</div>'
+        + '<div class="desc-escala">'
+        +   tramos.map(function(x, i) {
+              return '<div class="desc-tramo' + (i === actual ? ' es-este' : '') + '">'
+                + '<span class="desc-tramo-pct">' + x.pct + '%</span>'
+                + '<span class="desc-tramo-rango">' + x.txt + '</span>'
+                + '</div>';
+            }).join("")
+        + '</div>'
+        + '<div class="desc-info-n">El descuento se calcula sobre el total del carrito y se aplica pagando con transferencia.</div>'
+        + '</div>'
+      : '';
+  }
+  document.getElementById("prodDesc").innerHTML = '<div class="prod-desc-loading">Generando descripción...</div>';
+  // La descripcion viene del mapa global, no dentro de cada card
+  var descGuardada = p.descripcion || (window.DESCRIPCIONES || {})[p.id];
+  if (descGuardada) {
+    document.getElementById("prodDesc").textContent = descGuardada;
+  } else {
+    fetchDescripcion("", "", p.name);
+  }
+
+  var wrap = document.getElementById("prodImgWrap");
+  wrap.innerHTML = "";
+  if (p.imgUrl) {
+    var img = document.createElement("img");
+    img.src = p.imgUrl; img.alt = p.name; img.referrerPolicy = "no-referrer";
+    img.onerror = function() { img.style.display="none"; };
+    wrap.appendChild(img);
+  } else {
+    var ph = document.createElement("div");
+    ph.className = "prod-img-placeholder"; ph.textContent = "📦";
+    wrap.appendChild(ph);
+  }
+
+  var btnAgregar = document.getElementById("prodBtnAgregar");
+  var HTML_ADD = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg> Agregar al carrito';
+  btnAgregar.innerHTML = HTML_ADD;
+  btnAgregar.style.background = "";
+  btnAgregar.onclick = function() {
+    var qEl = document.getElementById("prodQty");
+    var n = Math.max(1, parseInt(qEl && qEl.value, 10) || 1);
+    var key = p.id;
+    var found = cart.find(function(i){return i.key===key;});
+    if (found) found.qty += n;
+    else cart.push({key:key,id:p.id,name:p.name,price:p.precioCatalogo,reqMin:p.reqMin,baseUnits:p.baseUnits,pv:p.pv||"",qty:n});
+    saveCart();
+    btnAgregar.innerHTML = "&#10003; Agregado (" + n + ")";
+    btnAgregar.style.background = "#ea580c";
+    setTimeout(function(){ btnAgregar.innerHTML = HTML_ADD; btnAgregar.style.background=""; }, 1600);
+  };
+
+  // Comprar ahora: reemplaza el carrito con este producto y abre el
+  // checkout, respetando la cantidad elegida en el modal.
+  var btnComprar = document.getElementById("prodBtnComprar");
+  if (btnComprar) {
+    btnComprar.onclick = function() {
+      var qEl = document.getElementById("prodQty");
+      var n = Math.max(1, parseInt(qEl && qEl.value, 10) || 1);
+
+      carritoAnteriorCompraDirecta = cart.map(function(i){ return Object.assign({}, i); });
+      compraDirectaActiva = true;
+      pedidoConfirmado = false;
+
+      cart = [{
+        key: p.id, id: p.id, name: p.name, price: p.precioCatalogo,
+        reqMin: p.reqMin, baseUnits: p.baseUnits, pv: p.pv || "", qty: n
+      }];
+      saveCart();
+
+      cerrarProducto();
+      var panel = document.getElementById("cartPanel");
+      if (panel) panel.style.display = "none";
+      abrirCheckout();
+    };
+  }
+
+  var btnShare = document.getElementById("prodBtnShare");
+  if (btnShare) {
+    var linkProd = "https://jr93-arg.github.io/WEB-EL-GRINGUITO/p/" + p.id + ".html";
+    // Texto para estados y chats de WhatsApp: *negrita* y emojis, y el link al
+    // final para que la vista previa muestre la foto. Se invita a comprar en
+    // la web y no se habla de formas de pago. "Desde" porque el precio es el
+    // mas bajo (el de transferencia).
+    var nombreWa = limpiarTextoCliente(p.name).replace(/\*/g, "").trim();
+    // Formato probado en WhatsApp: sin lineas vacias y con el link SOLO en la
+    // ultima linea (sin emoji adelante). Con otro formato la vista previa
+    // del link (foto, nombre) no siempre se genera.
+    var textoWa = [
+      "🔥 *" + nombreWa + "*",
+      "💰 Desde *" + precioTexto + "*",
+      "🚚 Envíos a todo el país",
+      "🛒 *Comprá online, fácil y seguro:*",
+      linkProd
+    ].join("\n");
+    var menu = document.getElementById("shareMenu");
+    var cerrarMenu = function () {
+      menu.classList.remove("open");
+      btnShare.setAttribute("aria-expanded", "false");
+    };
+    document.getElementById("shWa").href = "https://wa.me/?text=" + encodeURIComponent(textoWa);
+    var txtCopiar = document.getElementById("shCopiarTxt");
+    txtCopiar.textContent = "Copiar link";
+    btnShare.onclick = function (ev) {
+      ev.stopPropagation();
+      var abrir = !menu.classList.contains("open");
+      menu.classList.toggle("open", abrir);
+      btnShare.setAttribute("aria-expanded", abrir ? "true" : "false");
+    };
+    menu.onclick = function (ev) { ev.stopPropagation(); };
+    document.getElementById("shWa").onclick = cerrarMenu;
+    document.getElementById("shCopiar").onclick = function () {
+      var listo = function () {
+        txtCopiar.textContent = "¡Link copiado!";
+        setTimeout(function () { txtCopiar.textContent = "Copiar link"; cerrarMenu(); }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(linkProd).then(listo, function () { window.prompt("Copiá el link:", linkProd); });
+      } else { window.prompt("Copiá el link:", linkProd); }
+    };
+    if (!window.__shareCierre) {
+      window.__shareCierre = true;
+      document.addEventListener("click", function () {
+        var m = document.getElementById("shareMenu");
+        if (m) m.classList.remove("open");
+        var b = document.getElementById("prodBtnShare");
+        if (b) b.setAttribute("aria-expanded", "false");
+      });
+    }
+  }
+  // Conectar simulador de crédito con este producto
+  creditoPrecio    = p.precioCatalogo || 0;
+  creditoNombre    = p.name || "";
+  creditoAbierto   = false;
+  creditoAntPct    = 35;
+  creditoCuotasSel = creditoPrecio <= 200000 ? 3 : 6;
+  var toggle = document.getElementById("creditoToggle");
+  var body   = document.getElementById("creditoBody");
+  var slider = document.getElementById("creditoSlider");
+  if (toggle) toggle.classList.remove("open");
+  if (body)   body.classList.remove("open");
+  var formCred = document.getElementById("creditoForm");
+  var btnSolic = document.getElementById("creditoBtnSolicitar");
+  if (formCred) formCred.style.display = "none";
+  if (btnSolic) btnSolic.style.display = "flex";
+  // Configurar slider con monto mínimo y máximo en pesos
+  if (slider && creditoPrecio) {
+    var minAnticipo = Math.round(creditoPrecio * 0.35);
+    var maxAnticipo = Math.round(creditoPrecio * 0.70);
+    var step        = Math.round(creditoPrecio * 0.05); // pasos de 5%
+    slider.min   = minAnticipo;
+    slider.max   = maxAnticipo;
+    slider.step  = step;
+    slider.value = minAnticipo;
+  }
+  var antVal = document.getElementById("creditoAnticipoVal");
+  if (antVal && creditoPrecio) {
+    antVal.textContent = "$ " + Math.round(creditoPrecio * 0.35).toLocaleString("es-AR");
+  }
+
+  document.getElementById("prodOverlay").classList.add("open");
+  // Siempre desde arriba. Tiene que ser DESPUES de mostrarlo: con el modal
+  // oculto (display:none) el navegador ignora scrollTop y conserva la
+  // posicion del producto anterior, y el nuevo se abria "cortado".
+  var _modal = document.querySelector("#prodOverlay .prod-modal");
+  if (_modal) _modal.scrollTop = 0;
+}
+
+function cerrarProducto(desdeHistorial) {
+  document.getElementById("prodOverlay").classList.remove("open");
+  // Si lo cerro el boton X (no "atras"), se retira la entrada del historial
+  if (_prodEnHistorial && desdeHistorial !== true) {
+    _prodEnHistorial = false;
+    try { history.back(); } catch(e) {}
+  }
+  // Restaurar botones de carrito y WA
+  var prodActions = document.querySelector(".prod-actions");
+  if (prodActions) prodActions.style.display = "flex";
+  creditoAbierto = false;
+}
+
+async function fetchDescripcion(href, fuente, nombreProducto) {
+  var descEl = document.getElementById("prodDesc");
+  descEl.innerHTML = '<div class="prod-desc-loading">Generando descripcion...</div>';
+
+  var cacheKey = "desc_" + (nombreProducto || href).replace(/[^a-z0-9]/gi, "_").slice(0, 60);
+  var cached   = sessionStorage.getItem(cacheKey);
+  if (cached) { descEl.textContent = cached; return; }
+
+  try {
+    var res = await fetch("https://gringuito-api-production.up.railway.app/descripcion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ producto: nombreProducto })
+    });
+    var data = await res.json();
+    var desc = data.descripcion || "";
+    if (desc) {
+      sessionStorage.setItem(cacheKey, desc);
+      descEl.textContent = desc;
+    } else {
+      descEl.textContent = "Descripcion no disponible.";
+    }
+  } catch(e) {
+    descEl.textContent = "";
+  }
+}
+
+document.getElementById("prodOverlay").addEventListener("click", function(e) {
+  if (e.target===document.getElementById("prodOverlay")) cerrarProducto();
+});
+
+renderMasVistos();
+
+// Abrir modal si la URL tiene ?id= (viene de link compartido por WhatsApp)
+(function() {
+  var params  = new URLSearchParams(window.location.search);
+  var idParam = params.get("id");
+  if (!idParam) return;
+  var idx  = window.CATALOGO_INDEX || [];
+  var prod = idx.find(function(p) { return p.id === idParam; });
+  if (!prod) return;
+  setTimeout(function() {
+    var pc  = prod.precio;
+    var pct = pc <= 20000  ? 5
+            : pc <= 50000  ? 10
+            : pc <= 100000 ? 15
+            : pc <= 200000 ? 18 : 20;
+    var dataStr = JSON.stringify({
+      id: prod.id, name: prod.name,
+      imgUrl: prod.imgUrl, precioCatalogo: pc,
+      precioConDesc: Math.round(pc * (1 - pct/100)), pctIndTexto: pct,
+      reqMin: prod.reqMin, baseUnits: prod.baseUnits, pv: prod.pv||"",
+      descripcion: ""
+    });
+    abrirProducto(dataStr);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, 700);
+})();
+
+// ── Temporadas ───────────────────────────────────────────────────────────────
+// La seccion destacada cambia sola segun la fecha. Fuera de campaña
+// muestra los productos mas consultados, que se calculan de las vistas
+// reales del catalogo.
+
+function tercerDomingoDeAgosto(anio) {
+  var d = new Date(anio, 7, 1), dom = 0;
+  while (true) {
+    if (d.getDay() === 0) { dom++; if (dom === 3) break; }
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
+
+// Cada temporada define su ventana, titulo y como reconocer sus productos.
+var TEMPORADAS = [
+  {
+    id: "nino",
+    titulo: "Regalos para el Día del Niño",
+    emoji: "🎁",
+    badge: "Día del Niño",
+    color: "#ec4899",
+    // Arranca 30 dias antes y termina el mismo dia
+    ventana: function(hoy) {
+      var f = tercerDomingoDeAgosto(hoy.getFullYear());
+      var desde = new Date(f); desde.setDate(desde.getDate() - 30);
+      return (hoy >= desde && hoy <= f) ? f : null;
+    },
+    filtra: function(nombre) { return esProductoNino(nombre); },
+    accesible: 60000,
+  },
+  {
+    id: "navidad",
+    titulo: "Regalos para Navidad",
+    emoji: "🎄",
+    badge: "Navidad",
+    color: "#dc2626",
+    ventana: function(hoy) {
+      var f = new Date(hoy.getFullYear(), 11, 25);
+      var desde = new Date(hoy.getFullYear(), 10, 20);
+      return (hoy >= desde && hoy <= f) ? f : null;
+    },
+    filtra: function(nombre) { return esProductoNino(nombre) || esProductoRegalo(nombre); },
+    accesible: 90000,
+  },
+  {
+    id: "madre",
+    titulo: "Regalos para el Día de la Madre",
+    emoji: "💐",
+    badge: "Día de la Madre",
+    color: "#db2777",
+    ventana: function(hoy) {
+      // Tercer domingo de octubre
+      var d = new Date(hoy.getFullYear(), 9, 1), dom = 0;
+      while (true) {
+        if (d.getDay() === 0) { dom++; if (dom === 3) break; }
+        d.setDate(d.getDate() + 1);
+      }
+      var desde = new Date(d); desde.setDate(desde.getDate() - 25);
+      return (hoy >= desde && hoy <= d) ? d : null;
+    },
+    filtra: function(nombre) { return esProductoRegalo(nombre); },
+    accesible: 80000,
+  },
+  {
+    id: "padre",
+    titulo: "Regalos para el Día del Padre",
+    emoji: "👔",
+    badge: "Día del Padre",
+    color: "#1d4ed8",
+    ventana: function(hoy) {
+      // Tercer domingo de junio
+      var d = new Date(hoy.getFullYear(), 5, 1), dom = 0;
+      while (true) {
+        if (d.getDay() === 0) { dom++; if (dom === 3) break; }
+        d.setDate(d.getDate() + 1);
+      }
+      var desde = new Date(d); desde.setDate(desde.getDate() - 25);
+      return (hoy >= desde && hoy <= d) ? d : null;
+    },
+    filtra: function(nombre) { return esProductoRegalo(nombre); },
+    accesible: 80000,
+  },
+];
+
+// Temporada activa hoy, o null si no hay ninguna
+function temporadaActiva() {
+  var hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  for (var i = 0; i < TEMPORADAS.length; i++) {
+    var f = TEMPORADAS[i].ventana(hoy);
+    if (f) return { temp: TEMPORADAS[i], fecha: f, hoy: hoy };
+  }
+  return null;
+}
+
+// Actualiza el encabezado segun la temporada
+(function() {
+  var elTitulo = document.getElementById("destTitulo");
+  var elSub    = document.getElementById("destSub");
+  if (!elSub) return;
+
+  var act = temporadaActiva();
+  if (!act) {
+    if (elTitulo) elTitulo.textContent = "Los más consultados";
+    elSub.textContent = "Lo que más miran nuestros clientes";
+    return;
+  }
+
+  if (elTitulo) elTitulo.textContent = act.temp.emoji + "  " + act.temp.titulo;
+
+  var dias = Math.round((act.fecha - act.hoy) / 86400000);
+  var MESES = ["enero","febrero","marzo","abril","mayo","junio",
+               "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  var txt = act.fecha.getDate() + " de " + MESES[act.fecha.getMonth()];
+  if (dias === 0)      txt = "¡Es hoy! 🎉";
+  else if (dias === 1) txt = "¡Mañana! · " + txt;
+  else if (dias <= 30) txt = "Faltan " + dias + " días · " + txt;
+  elSub.textContent = txt;
+})();
+
+
+// ── Destacados dinámicos — Día del Niño ──────────────────────────────────────
+
+// Exclusion dura: nunca es regalo, ni aunque diga "infantil" o "bebe"
+var EXCLUIR_DURO = [
+  "seguridad","vigilancia","espia","espias","cctv","dvr","nvr","domo",
+  "alarma","alarmas","sensor","sensores","cerradura","cerraduras",
+  "monitoreo","videoportero","portero","intercomunicador","detector",
+  "extintor","matafuego","candado","caja fuerte","precinto"
+];
+
+// Marcadores inequivocos: si aparecen, es regalo para chicos si o si
+var MARCADORES_NINO = [
+  "infantil","infantiles","nino","ninos","nina","ninas","kids","kid",
+  "juguete","juguetes","bebe","bebes","baby","junior","jr"
+];
+
+// Categorias de regalo
+var PALABRAS_NINO = [
+  // Jugueteria
+  "juego","juegos","muneca","munecas","muneco","munecos","peluche","peluches",
+  "rompecabezas","puzzle","bloque","bloques","lego","ladrillito","ladrillitos",
+  "didactico","didactica","encastre","castillo","casita","cocinita","carrito",
+  "tobogan","hamaca","pelotero","calesita","cuna","cochecito",
+  // Cartas y mesa
+  "carta","cartas","naipe","naipes","uno","ludo","ajedrez","dama","damas",
+  "domino","jenga","dado","dados","metegol","tateti",
+  // Vehiculos
+  "bicicleta","bicicletas","bici","triciclo","monopatin","patineta","scooter",
+  "patin","patines","cuatriciclo","karting",
+  // Gaming
+  "consola","consolas","joystick","joysticks","gamepad","gamer","gaming",
+  "playstation","xbox","nintendo","retro","arcade",
+  // Tecnologia
+  "telefono","telefonos","celular","celulares","smartphone","smartphones",
+  "reloj","relojes","smartwatch","auricular","auriculares","tablet","tablets",
+  "parlante","parlantes","microfono","karaoke",
+  // Deportes y aire libre
+  "pelota","pelotas","futbol","basquet","arco","inflable","pileta","pistola",
+  // Creatividad
+  "plastilina","slime","burbuja","burbujas","disfraz","disfraces",
+  "acuarela","crayon","crayones",
+  // Escolar
+  "mochila","mochilas","cartuchera","escolar","escolares",
+  // Personajes
+  "princesa","princesas","superheroe","superheroes","dinosaurio","dinosaurios",
+  "unicornio","unicornios","hada","dragon"
+];
+
+// Productos que NO son regalo para chicos aunque compartan alguna palabra
+var EXCLUIR_NINO = [
+  // Herramientas y ferreteria
+  "herramienta","herramientas","taladro","amoladora","soldador","soldadora",
+  "sierra","atornillador","destornillador","pinza","pinzas","llave","llaves",
+  "martillo","escalera","andamio","nivel","cinta metrica","alicate",
+  // Electrodomesticos
+  "aspiradora","masajeador","balanza","licuadora","cafetera","heladera",
+  "microondas","plancha","batidora","tostadora","freidora","procesadora",
+  "ventilador","calefactor","estufa","termotanque","lavarropas","secarropas",
+  "extractor","purificador","humidificador",
+  // Bazar y hogar
+  "sabana","sabanas","toalla","toallas","olla","ollas","sarten","cubierto",
+  "cubiertos","copa","copas","vaso","vasos","jarra","mantel","cortina",
+  "colchon","acolchado","almohada","frazada","repasador","bandeja",
+  "organizador","perchero","zapatero","estante","repisa","tender",
+  // Cuidado personal
+  "secador","afeitadora","depiladora","planchita","buclera","maquillaje",
+  "cortapelo","masajeadora",
+  // Gimnasio y fitness
+  "fija","ejercicio","gimnasio","spinning","eliptica","trotadora","caminadora",
+  "mancuerna","mancuernas","pesa","pesas","abdominal","colchoneta",
+  // Otros no-juguete
+  "pared","profesional","industrial","automotor","reparacion","soldar","autoparte"
+];
+
+function normalizarNombre(s) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9s]/g, " ")
+    .replace(/s+/g, " ")
+    .trim();
+}
+
+function contienePalabra(texto, lista) {
+  for (var i = 0; i < lista.length; i++) {
+    if (texto.indexOf(" " + lista[i] + " ") >= 0) return true;
+  }
+  return false;
+}
+
+// Regalos para adultos: electronica, hogar, belleza, herramientas de regalo
+var PALABRAS_REGALO = [
+  "auricular","auriculares","parlante","parlantes","smartwatch","reloj","relojes",
+  "celular","celulares","smartphone","tablet","tablets","notebook","teclado","mouse",
+  "cafetera","pava","termo","mate","mates","bombilla","vinoteca","copa","copas",
+  "licuadora","batidora","tostadora","sandwichera","freidora","procesadora","waflera",
+  "perfume","perfumes","secador","planchita","buclera","afeitadora","masajeador",
+  "aspiradora","ventilador","purificador","humidificador","lampara","velador",
+  "manta","almohada","acolchado","sabanas","toallon","bata","pantuflas",
+  "taladro","atornillador","amoladora","herramienta","herramientas","caja",
+  "bicicleta","monopatin","mochila","valija","cartera","billetera","riñonera",
+  "camara","proyector","luces","led","ring","aro","tripode",
+];
+
+function esProductoRegalo(nombre) {
+  var n = " " + normalizarNombre(nombre) + " ";
+  if (contienePalabra(n, EXCLUIR_DURO)) return false;
+  return contienePalabra(n, PALABRAS_REGALO);
+}
+
+function esProductoNino(nombre) {
+  var n = " " + normalizarNombre(nombre) + " ";
+  // 1. Rubros que nunca son regalo (seguridad, vigilancia, etc.)
+  if (contienePalabra(n, EXCLUIR_DURO)) return false;
+  // 2. Marcador inequivoco gana sobre el resto de exclusiones
+  if (contienePalabra(n, MARCADORES_NINO)) return true;
+  // 3. Producto de adulto
+  if (contienePalabra(n, EXCLUIR_NINO)) return false;
+  // 4. Categoria de regalo
+  return contienePalabra(n, PALABRAS_NINO);
+}
+
+function renderDestacados() {
+  var grid = document.getElementById("gridDestacados");
+  if (!grid) return;
+
+  var idx = window.CATALOGO_INDEX || [];
+  if (!idx.length) return;
+
+  // Vistas reales del catalogo (se acumulan al abrir cada producto)
+  var mv = {};
+  try { mv = JSON.parse(sessionStorage.getItem("jrMasVistos") || "{}"); } catch(e) {}
+  // Ranking del servidor: refleja lo que miran TODOS los visitantes
+  var topServidor = window.VISTAS_TOP || {};
+
+  var act = temporadaActiva();
+  var LIMITE = 10;
+  var seleccion, badgeTexto = null, badgeColor = null;
+
+  function vistasDe(p) {
+    return (topServidor[p.id] || 0) * 5 + (mv[p.id] || 0) * 3;
+  }
+
+  if (act) {
+    // ── Temporada activa: productos del rubro, priorizando precio accesible ──
+    badgeTexto = act.temp.emoji + " " + act.temp.badge;
+    badgeColor = act.temp.color;
+    var tope = act.temp.accesible || 60000;
+
+    var deTemporada = idx
+      .filter(function(p) { return p.precio > 0 && act.temp.filtra(p.name); })
+      .map(function(p) {
+        var barato = p.precio <= tope ? 3 : p.precio <= tope * 2 ? 1.5 : 0;
+        return { p: p, score: vistasDe(p) + barato + 10 };
+      })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, LIMITE)
+      .map(function(x) { return x.p; });
+
+    // Completar con los mas vistos si no alcanzan
+    var resto = idx
+      .filter(function(p) {
+        return p.precio > 0 && !deTemporada.some(function(d) { return d.id === p.id; });
+      })
+      .map(function(p) { return { p: p, score: vistasDe(p) }; })
+      .sort(function(a, b) { return b.score - a.score; })
+      .slice(0, LIMITE - deTemporada.length)
+      .map(function(x) { return x.p; });
+
+    seleccion = deTemporada.concat(resto);
+
+  } else {
+    // ── Sin temporada: los mas consultados ──
+    seleccion = idx
+      .filter(function(p) { return p.precio > 0; })
+      .map(function(p) { return { p: p, vistas: vistasDe(p) }; })
+      .filter(function(x) { return x.vistas > 0; })
+      .sort(function(a, b) { return b.vistas - a.vistas; })
+      .slice(0, LIMITE)
+      .map(function(x) { return x.p; });
+
+    // Si todavia no hay vistas, mostrar novedades para no dejarlo vacio
+    if (seleccion.length < 4) {
+      var yaEstan = {};
+      seleccion.forEach(function(p) { yaEstan[p.id] = 1; });
+      var extra = idx
+        .filter(function(p) { return p.precio > 0 && !yaEstan[p.id]; })
+        .slice(0, LIMITE - seleccion.length);
+      seleccion = seleccion.concat(extra);
+    }
+  }
+
+  if (!seleccion.length) return;
+
+  grid.innerHTML = seleccion.map(function(p, i) {
+    var precioCatalogo = p.precio;
+    var pctInd = precioCatalogo <= 20000  ? 5
+               : precioCatalogo <= 50000  ? 10
+               : precioCatalogo <= 100000 ? 15
+               : precioCatalogo <= 200000 ? 18 : 20;
+    var precioConDesc = Math.round(precioCatalogo * (1 - pctInd / 100));
+    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify({
+      id: p.id, name: p.name, imgUrl: p.imgUrl,
+      precioCatalogo: precioCatalogo, precioConDesc: precioConDesc,
+      pctIndTexto: pctInd, reqMin: p.reqMin, baseUnits: p.baseUnits, pv: p.pv
+    }))));
+
+    var badge = "";
+    if (badgeTexto && act.temp.filtra(p.name)) {
+      badge = '<span class="badge-temp" style="background:' + badgeColor + '">'
+            + escHtml(badgeTexto) + '</span>';
+    } else if (!act && i < 3) {
+      badge = '<span class="badge-top">#' + (i + 1) + ' más visto</span>';
+    }
+
+    var cuota = precioCatalogo >= 50000
+      ? '<span class="card-cuotas">6 cuotas de ' + fmtMV(Math.round(precioCatalogo / 6)) + '</span>'
+      : '';
+
+    return '<div class="card" data-prod="' + b64 + '" data-cat="' + escHtml(p.categoria || "") + '" onclick="abrirProductoCard(this)" style="cursor:pointer">'
+      + '<div class="card-img">'
+      + (p.imgUrl
+          ? '<img src="' + escHtml(p.imgUrl) + '" alt="' + escHtml(p.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="imgFallback(this)">'
+            + '<div class="no-img" style="display:none"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>Sin foto</span></div>'
+          : '<div class="no-img"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span>Sin foto</span></div>')
+      + badge
+      + '</div>'
+      + '<div class="card-body">'
+      + '<p class="card-name">' + escHtml(limpiarTextoCliente(p.name)) + '</p>'
+      + '<p class="card-price-mp"><s>' + fmtMV(precioCatalogo) + '</s></p>'
+      + '<p class="card-price">' + fmtMV(precioConDesc) + '</p>'
+      + '<span class="card-badge-desc">' + pctInd + '% off con transferencia</span>'
+      + cuota
+      + '<div class="card-actions" onclick="event.stopPropagation()">'
+      + '<button class="buy-btn" onclick="comprarAhora(this)"'
+      + ' data-id="' + escHtml(p.id) + '" data-name="' + escHtml(p.name) + '" data-price="' + precioCatalogo + '"'
+      + ' data-req-min="' + (p.reqMin || 0) + '" data-base-units="' + (p.baseUnits || 0) + '" data-pv="' + (p.pv || '') + '">'
+      + 'Comprar</button>'
+      + '<button class="add-btn" onclick="addToCartFromBtn(this)"'
+      + ' data-id="' + escHtml(p.id) + '" data-name="' + escHtml(p.name) + '" data-price="' + precioCatalogo + '"'
+      + ' data-req-min="' + (p.reqMin || 0) + '" data-base-units="' + (p.baseUnits || 0) + '" data-pv="' + (p.pv || '') + '"'
+      + ' title="Agregar al carrito">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/></svg>'
+      + '</button></div></div></div>';
+  }).join("");
+}
+
+
+// Renderizar al cargar y cada vez que cambia el ranking de vistas
+renderDestacados();
+// Re-renderizar cuando lleguen datos de Railway
+setTimeout(renderDestacados, 2000);
+
+// ── Simulador de crédito ──────────────────────────────────────────────────────
+var creditoAbierto   = false;
+var creditoCuotasSel = 6;
+var creditoAntPct    = 35;
+var creditoPrecio    = 0;
+var creditoNombre    = "";
+
+function toggleCredito() {
+  creditoAbierto = !creditoAbierto;
+  document.getElementById("creditoToggle").classList.toggle("open", creditoAbierto);
+  document.getElementById("creditoBody").classList.toggle("open", creditoAbierto);
+  // Ocultar/mostrar botones de carrito y WA
+  var prodActions = document.querySelector(".prod-actions");
+  if (prodActions) prodActions.style.display = creditoAbierto ? "none" : "flex";
+  if (creditoAbierto) renderCredito();
+}
+
+function onAnticipoChange(val) {
+  var monto = parseInt(val);
+  creditoAntPct = Math.round(monto / creditoPrecio * 100);
+  document.getElementById("creditoAnticipoVal").textContent = "$ " + monto.toLocaleString("es-AR");
+  renderCredito();
+}
+
+function calcCredito(precio, pct, cuotas) {
+  var anticipo = Math.round(precio * pct / 100);
+  // Si tenemos el monto exacto del slider lo usamos
+  var slider = document.getElementById("creditoSlider");
+  if (slider && parseInt(slider.value) > 0) {
+    anticipo = parseInt(slider.value);
+  }
+  var saldo  = precio - anticipo;
+  var i      = 0.10;
+  var cuota  = Math.round(saldo * i / (1 - Math.pow(1+i, -cuotas)));
+  var total  = anticipo + cuota * cuotas;
+  return { anticipo, saldo, intTotal: Math.round(cuota * cuotas - saldo), cuota, total: Math.round(total), cuotas };
+}
+
+function fmtC(n) { return "$ " + Math.round(n).toLocaleString("es-AR"); }
+function metC(l,v) { return '<div><div class="credito-metrica-label">'+l+'</div><div class="credito-metrica-valor">'+v+'</div></div>'; }
+
+function renderCredito() {
+  if (!creditoAbierto || !creditoPrecio) return;
+  var maxC = creditoPrecio <= 200000 ? 3 : 6;
+  if (creditoCuotasSel > maxC) creditoCuotasSel = maxC;
+
+  // Cuotas
+  var cuotasEl = document.getElementById("creditoCuotas");
+  cuotasEl.innerHTML = "";
+  [3,6].forEach(function(n) {
+    if (n > maxC) return;
+    var r   = calcCredito(creditoPrecio, creditoAntPct, n);
+    var sel = n === creditoCuotasSel;
+    var btn = document.createElement("div");
+    btn.className = "credito-cuota-btn" + (sel?" active":"");
+    btn.innerHTML = '<div class="credito-cuota-monto">'+fmtC(r.cuota)+'</div><div class="credito-cuota-label">'+n+' cuotas</div>';
+    btn.onclick = function() { creditoCuotasSel = n; renderCredito(); };
+    cuotasEl.appendChild(btn);
+  });
+
+  // Resumen — claro y sin redundancia
+  var r = calcCredito(creditoPrecio, creditoAntPct, creditoCuotasSel);
+  document.getElementById("creditoResumen").innerHTML =
+    '<div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
+      '<div style="font-size:12px;color:#854F0B;margin-bottom:2px;font-weight:600">Pagás hoy (anticipo ' + creditoAntPct + '%)</div>' +
+      '<div style="font-size:28px;font-weight:800;color:#111">' + fmtC(r.anticipo) + '</div>' +
+    '</div>' +
+    '<div style="background:#fff7ed;border:1px solid #ea580c;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
+      '<div style="font-size:12px;color:#9a3412;margin-bottom:2px;font-weight:600">Tu cuota mensual</div>' +
+      '<div style="font-size:28px;font-weight:800;color:#ea580c">' + fmtC(r.cuota) + '</div>' +
+      '<div style="font-size:11px;color:#888">x ' + creditoCuotasSel + ' cuotas · 6% interés mensual sobre saldo</div>' +
+    '</div>' +
+    '<div style="background:#f9f9f9;border-radius:10px;padding:10px;text-align:center">' +
+      '<div style="font-size:11px;color:#888;margin-bottom:2px">Total a pagar</div>' +
+      '<div style="font-size:18px;font-weight:800;color:#111">' + fmtC(r.total) + '</div>' +
+      '<div style="font-size:10px;color:#aaa">anticipo + ' + creditoCuotasSel + ' cuotas</div>' +
+    '</div>';
+
+  // Cuadro de cuotas
+  var saldo = r.saldo; var rows = "";
+  for (var i=1; i<=r.cuotas; i++) {
+    var intMes  = Math.round(saldo * 0.06);
+    var capital = i===r.cuotas ? saldo : r.cuota - intMes;
+    saldo = Math.max(0, Math.round(saldo - capital));
+    var cuotaR  = capital + intMes;
+    rows += "<tr><td>"+i+"</td><td>"+fmtC(cuotaR)+"</td><td>"+fmtC(intMes)+"</td><td>"+fmtC(saldo)+"</td></tr>";
+  }
+  document.getElementById("creditoCuadro").innerHTML =
+    "<table><thead><tr><th>N°</th><th>Importe</th><th>Interés</th><th>Saldo</th></tr></thead><tbody>"+rows+"</tbody></table>";
+
+  // Botón WA con formulario completo
+  document.getElementById("creditoBtnWA").onclick = function() {
+    var nombre    = (document.getElementById("cfNombre")?.value   || "").trim();
+    var dni       = (document.getElementById("cfDni")?.value      || "").trim();
+    var tel       = (document.getElementById("cfTel")?.value      || "").trim();
+    var domicilio = (document.getElementById("cfDomicilio")?.value || "").trim();
+    var barrio    = (document.getElementById("cfBarrio")?.value    || "").trim();
+    var trabajo   = (document.getElementById("cfTrabajo")?.value   || "").trim();
+
+    if (!nombre || !dni || !tel || !domicilio || !barrio || !trabajo) {
+      alert("Por favor completá todos los campos antes de enviar.");
+      return;
+    }
+
+    var r   = calcCredito(creditoPrecio, creditoAntPct, creditoCuotasSel);
+
+    // Guardar en Sheets via Railway
+    fetch("https://gringuito-api-production.up.railway.app/solicitud-credito", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: nombre, dni: dni, telefono: tel,
+        domicilio: domicilio, barrio: barrio, trabajo: trabajo,
+        producto: creditoNombre, precio_lista: creditoPrecio,
+        anticipo: r.anticipo, cuotas: creditoCuotasSel,
+        cuota_mensual: r.cuota, total: r.total
+      })
+    }).catch(function(){});
+
+    var msg = encodeURIComponent(
+      "SOLICITUD DE FINANCIACION - " + "El Gringuito" +
+      " | Producto: " + creditoNombre +
+      " | Precio lista: " + fmtC(creditoPrecio) +
+      " | Anticipo: " + fmtC(r.anticipo) +
+      " | " + creditoCuotasSel + " cuotas de " + fmtC(r.cuota) +
+      " | Total: " + fmtC(r.total) +
+      " || DATOS: Nombre: " + nombre +
+      " | DNI: " + dni +
+      " | Tel: " + tel +
+      " | Domicilio: " + domicilio + " - " + barrio +
+      " | Trabajo: " + trabajo +
+      " || Adjunto fotos de DNI frente y dorso, boleta de servicio y comprobante de ingresos."
+    );
+    window.open("https://wa.me/5493810000000?text=" + msg, "_blank");
+  };
+}
+
+function mostrarFormCredito() {
+  var form     = document.getElementById("creditoForm");
+  var btnSolic = document.getElementById("creditoBtnSolicitar");
+  if (form)     form.style.display     = "block";
+  if (btnSolic) btnSolic.style.display = "none";
+  // Limpiar campos
+  ["cfNombre","cfDni","cfTel","cfDomicilio","cfBarrio","cfTrabajo"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+
+// ── Modal ¿Cómo comprar? ──────────────────────────────────────────────────────
+var AYUDA_KEY = "jrAyudaVista";
+
+function abrirAyuda() {
+  var overlay = document.getElementById("ayudaOverlay");
+  overlay.classList.add("open");
+  // Resetear checkbox al abrir manualmente
+  var chk = document.getElementById("chkNoMostrar");
+  if (chk) chk.checked = false;
+}
+
+function cerrarAyuda() {
+  document.getElementById("ayudaOverlay").classList.remove("open");
+  var chk = document.getElementById("chkNoMostrar");
+  if (chk && chk.checked) {
+    localStorage.setItem(AYUDA_KEY, "1");
+  }
+}
+
+// No se abre solo. Antes saltaba a los 1,5 s en la primera visita y le
+// tapaba el catalogo al cliente justo cuando habia enganchado con algo.
+// Queda disponible desde el boton "Ayuda" del encabezado.
+
+// ── Carrusel de novedades ─────────────────────────────────────────────────────
+(function() {
+  var slider = document.getElementById("novSlider");
+  var outer  = slider ? slider.parentElement : null;
+  if (!slider || !outer) return;
+
+  var touchStartX = 0;
+  var touchStartAnim = 0;
+  var isDragging = false;
+
+  // Obtener posición actual de la animación
+  function getAnimX() {
+    var style = window.getComputedStyle(slider);
+    var mat   = new WebKitCSSMatrix(style.transform);
+    return mat.m41 || 0;
+  }
+
+  // Pausar animación
+  function pausar() { slider.style.animationPlayState = "paused"; }
+  function reanudar() {
+    setTimeout(function() { slider.style.animationPlayState = "running"; }, 800);
+  }
+
+  // Touch en mobile
+  outer.addEventListener("touchstart", function(e) {
+    touchStartX = e.touches[0].clientX;
+    pausar();
+  }, { passive: true });
+
+  outer.addEventListener("touchend", function(e) {
+    var dx = touchStartX - e.changedTouches[0].clientX;
+    // Swipe fuerte → saltar a la siguiente sección del carrusel
+    if (Math.abs(dx) > 30) {
+      var currentX = getAnimX();
+      // Ajustar la animación según dirección del swipe
+      slider.style.transform = "translateX(" + (currentX - (dx > 0 ? 172 : -172)) + "px)";
+    }
+    reanudar();
+  }, { passive: true });
+
+  // Mouse hover pausa
+  outer.addEventListener("mouseenter", pausar);
+  outer.addEventListener("mouseleave", reanudar);
+
+  // Drag con mouse
+  outer.addEventListener("mousedown", function(e) {
+    isDragging = true; touchStartX = e.clientX; pausar();
+  });
+  window.addEventListener("mouseup", function(e) {
+    if (!isDragging) return; isDragging = false; reanudar();
+  });
+})();
+
+// ── Social proof ──────────────────────────────────────────────────────────────
+var API_SP   = "https://gringuito-api-production.up.railway.app";
+var NOMBRES  = ["Rodrigo","Valentina","Lucas","Camila","Martin","Sofia","Agustin","Lucia","Santiago","Florencia","Tomas","Julieta","Mateo","Micaela","Facundo"];
+var CIUDADES = ["Tucuman","Salta","Cordoba","Buenos Aires","Mendoza","Rosario","La Plata","Jujuy","Catamarca","Santiago del Estero"];
+
+async function registrarVisitaPagina() {
+  try {
+    var res  = await fetch(API_SP + "/visita-pagina", { method: "POST" });
+    var data = await res.json();
+    if (data.ok) actualizarStats(data.total, data.activos);
+  } catch(e) {
+    // Fallback: intentar solo leer stats sin registrar visita
+    try {
+      var res2  = await fetch(API_SP + "/stats-pagina");
+      var data2 = await res2.json();
+      if (data2.ok) actualizarStats(data2.total, data2.activos);
+    } catch(e2) {
+      // Si todo falla, ocultar el contador
+      var elV = document.getElementById("statVisitas");
+      if (elV) elV.closest(".stat-item").style.display = "none";
+    }
+  }
+}
+
+function actualizarStats(total, activos) {
+  var elV = document.getElementById("statVisitas");
+  if (elV) elV.textContent = total.toLocaleString("es-AR");
+  var elO = document.getElementById("statOnline");
+  if (elO) {
+    var base = Math.max(1, activos);
+    var mult = base === 1 ? Math.floor(Math.random()*3)+2
+             : base === 2 ? Math.floor(Math.random()*3)+4
+             : base === 3 ? Math.floor(Math.random()*3)+5
+             : Math.floor(base * 1.8 + Math.random()*3);
+    elO.textContent = mult;
+  }
+}
+
+function pingPeriodico() {
+  var elO = document.getElementById("statOnline");
+  if (elO) {
+    var actual = parseInt(elO.textContent) || 2;
+    elO.textContent = Math.max(1, actual + Math.floor(Math.random()*3)-1);
+  }
+  setTimeout(pingPeriodico, 30000);
+}
+registrarVisitaPagina();
+setTimeout(pingPeriodico, 30000);
+
+// ── Ultima compra ─────────────────────────────────────────────────────────────
+var PRODUCTOS_MUESTRA = (window.CATALOGO_INDEX || []).filter(function(p){ return p.precio > 0; }).slice(0,50);
+
+function mostrarUltimaCompra() {
+  if (!PRODUCTOS_MUESTRA.length) return;
+  var prod   = PRODUCTOS_MUESTRA[Math.floor(Math.random()*PRODUCTOS_MUESTRA.length)];
+  var nombre = NOMBRES[Math.floor(Math.random()*NOMBRES.length)];
+  var ciudad = CIUDADES[Math.floor(Math.random()*CIUDADES.length)];
+  var mins   = Math.floor(Math.random()*55)+2;
+  var nprod  = prod.name.length > 35 ? prod.name.slice(0,33)+"..." : prod.name;
+  var el = document.getElementById("ultimaCompra");
+  if (!el) return;
+  document.getElementById("ucTitulo").textContent = nombre + " de " + ciudad + " compro:";
+  document.getElementById("ucSub").textContent    = nprod + " - hace " + mins + " min";
+  el.style.display = "block";
+  setTimeout(function(){ el.style.display="none"; }, 5000);
+}
+
+setTimeout(function() {
+  mostrarUltimaCompra();
+  function sched() {
+    setTimeout(function(){ mostrarUltimaCompra(); sched(); }, (Math.floor(Math.random()*45)+45)*1000);
+  }
+  sched();
+}, 8000);
+
+// ── Badges sociales en cards ──────────────────────────────────────────────────
+function agregarBadgesSociales() {
+  var mv = {};
+  try { mv = JSON.parse(sessionStorage.getItem("jrMasVistos")||"{}"); } catch(e){}
+  document.querySelectorAll(".card[data-prod]").forEach(function(card) {
+    try {
+      var p = JSON.parse(b64ToUtf8(card.dataset.prod));
+      var vistas = mv[p.id] || 0;
+      var wrap = card.querySelector(".card-img");
+      if (!wrap) return;
+      if (vistas >= 5 && !wrap.querySelector(".badge-vistas")) {
+        var bv = document.createElement("span");
+        bv.className = "badge-vistas";
+        bv.textContent = vistas + " vistas";
+        wrap.appendChild(bv);
+      }
+    } catch(e){}
+  });
+}
+setTimeout(agregarBadgesSociales, 2000);
+
+  
+
+// ── Seguimiento de la tienda ──────────────────────────────────────────────────
+// Le cuenta al panel qué hace cada visita: productos vistos, carrito, pasos del
+// pedido, medio de pago, búsquedas. No guarda nombre, teléfono, mail ni IP: la
+// visita es un código al azar que vive solo en esta pestaña.
+// Para no medir tus propias visitas: abrí la tienda con #nomedir al final de la
+// dirección (queda guardado en ese navegador). Con #medir se vuelve a activar.
+(function () {
+  try {
+    if (location.hash === "#nomedir") localStorage.setItem("jrNoMedir", "1");
+    if (location.hash === "#medir") localStorage.removeItem("jrNoMedir");
+    if (localStorage.getItem("jrNoMedir") === "1" || navigator.doNotTrack === "1") return;
+  } catch (e) {}
+
+  var sid = null, esNueva = false;
+  try { sid = sessionStorage.getItem("jrSid"); } catch (e) {}
+  if (!sid) {
+    sid = "";
+    try {
+      var bytes = new Uint8Array(12);
+      (window.crypto || window.msCrypto).getRandomValues(bytes);
+      for (var i = 0; i < bytes.length; i++) sid += (bytes[i] + 256).toString(16).slice(1);
+    } catch (e) {
+      for (var j = 0; j < 24; j++) sid += Math.floor(Math.random() * 16).toString(16);
+    }
+    try { sessionStorage.setItem("jrSid", sid); } catch (e) {}
+    esNueva = true;
+  }
+
+  // Cola de eventos: se mandan juntos cada tanto y al cerrar la pestaña.
+  var cola = [], timer = null;
+  function enviar() {
+    timer = null;
+    if (!cola.length) return;
+    var lote = cola.splice(0, 20);
+    try {
+      fetch(API_MV + "/evento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sid: sid, eventos: lote }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+    if (cola.length) timer = setTimeout(enviar, 300);
+  }
+  function medir(tipo, extra) {
+    try {
+      var ev = { tipo: tipo };
+      if (extra) for (var k in extra) ev[k] = extra[k];
+      cola.push(ev);
+      if (!timer) timer = setTimeout(enviar, 1500);
+    } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") enviar();
+  });
+  window.addEventListener("pagehide", enviar);
+
+  function totalCarrito() {
+    try { return cart.reduce(function (s, i) { return s + (Number(i.price) || 0) * (Number(i.qty) || 0); }, 0); }
+    catch (e) { return 0; }
+  }
+
+  // 1) Cómo llegó y desde qué aparato
+  if (esNueva) {
+    var ref = "";
+    try {
+      ref = (new URLSearchParams(location.search).get("utm_source") || sessionStorage.getItem("jrRef") || document.referrer || "").toLowerCase();
+    } catch (e) {}
+    var origen = "otro";
+    if (!ref || ref.indexOf(location.hostname) > -1) origen = "directo";
+    else if (ref.indexOf("instagram") > -1) origen = "instagram";
+    else if (ref.indexOf("facebook") > -1 || ref.indexOf("fb.") > -1) origen = "facebook";
+    else if (ref.indexOf("whatsapp") > -1 || ref.indexOf("wa.me") > -1) origen = "whatsapp";
+    else if (ref.indexOf("google") > -1) origen = "google";
+    var celular = false;
+    try { celular = window.matchMedia("(pointer:coarse)").matches || window.innerWidth < 800; } catch (e) {}
+    medir("sesion", { dato: origen, dato2: celular ? "celular" : "pc" });
+  }
+
+  // 2) Producto visto (se engancha a lo que ya cuenta las vistas)
+  if (typeof window.registrarVista === "function") {
+    var vistaOriginal = window.registrarVista;
+    window.registrarVista = function (id) {
+      try { if (id) medir("ver_producto", { producto_id: String(id) }); } catch (e) {}
+      return vistaOriginal.apply(this, arguments);
+    };
+  }
+
+  // 3) Agregados al carrito: se compara el carrito antes y después de cada cambio
+  var antes = {}, restaurando = false;
+  function fotoCarrito() {
+    var f = {};
+    try { cart.forEach(function (i) { f[i.id] = (f[i.id] || 0) + (Number(i.qty) || 0); }); } catch (e) {}
+    return f;
+  }
+  antes = fotoCarrito();
+  if (typeof window.saveCart === "function") {
+    var guardarOriginal = window.saveCart;
+    window.saveCart = function () {
+      var r = guardarOriginal.apply(this, arguments);
+      try {
+        var ahora = fotoCarrito();
+        if (!restaurando) {
+          cart.forEach(function (i) {
+            var dif = (ahora[i.id] || 0) - (antes[i.id] || 0);
+            if (dif > 0) medir("agregar_carrito", { producto_id: String(i.id), valor: (Number(i.price) || 0) * dif });
+          });
+        }
+        antes = ahora;
+      } catch (e) {}
+      return r;
+    };
+  }
+  // Al cerrar una compra directa sin terminar, el carrito de antes se restaura: no es un agregado
+  if (typeof window.cerrarCheckout === "function") {
+    var cerrarOriginal = window.cerrarCheckout;
+    window.cerrarCheckout = function () {
+      restaurando = true;
+      try { return cerrarOriginal.apply(this, arguments); } finally { restaurando = false; }
+    };
+  }
+
+  // 4) Pedido: abrir, pasos y aviso de mínimo de compra
+  if (typeof window.abrirCheckout === "function") {
+    var abrirOriginal = window.abrirCheckout;
+    window.abrirCheckout = function () {
+      try { medir("abrir_checkout", { valor: totalCarrito() }); } catch (e) {}
+      return abrirOriginal.apply(this, arguments);
+    };
+  }
+  if (typeof window.irAStep === "function") {
+    var pasoOriginal = window.irAStep;
+    window.irAStep = function (n) {
+      try { if (n >= 1 && n <= 4) medir("paso_checkout", { dato: String(n) }); } catch (e) {}
+      return pasoOriginal.apply(this, arguments);
+    };
+  }
+  if (typeof window.mostrarPaso0 === "function") {
+    var minOriginal = window.mostrarPaso0;
+    window.mostrarPaso0 = function () {
+      try { medir("minimo_aviso"); } catch (e) {}
+      return minOriginal.apply(this, arguments);
+    };
+  }
+
+  // 5) Elecciones del cliente: envío o retiro, medio de pago
+  document.addEventListener("click", function (e) {
+    try {
+      var t = e.target;
+      var envio = t.closest && t.closest(".toggle-btn");
+      if (envio && envio.dataset.tipo) medir("elegir_envio", { dato: envio.dataset.tipo });
+      var pago = t.closest && t.closest(".pago-opcion");
+      // El clic en la etiqueta dispara otro sobre el input: se cuenta solo uno
+      if (pago && t.tagName !== "INPUT") {
+        setTimeout(function () {
+          var sel = document.querySelector('input[name="metodoPago"]:checked');
+          if (sel) medir("elegir_pago", { dato: sel.value });
+        }, 0);
+      }
+      if (t.closest && t.closest("#shWa")) medir("compartir", { dato: "whatsapp" });
+      if (t.closest && t.closest("#shCopiar")) medir("compartir", { dato: "copiar" });
+    } catch (er) {}
+  }, true);
+
+  // 6) Pedido confirmado: solo cuando el servidor devolvió el número de pedido
+  try {
+    var caja = document.getElementById("confirmTracking");
+    var ultimoPedido = "";
+    if (caja && window.MutationObserver) {
+      new MutationObserver(function () {
+        var nroEl = caja.querySelector(".tracking-nro");
+        var nro = nroEl ? nroEl.textContent.trim() : "";
+        if (!nro || nro === ultimoPedido) return;
+        ultimoPedido = nro;
+        var sel = document.querySelector('input[name="metodoPago"]:checked');
+        var ent = document.querySelector(".toggle-btn.selected");
+        medir("pedido_confirmado", {
+          dato: sel ? sel.value : "", dato2: ent ? ent.dataset.tipo : "", valor: totalCarrito()
+        });
+        enviar();
+      }).observe(caja, { childList: true, subtree: true, characterData: true, attributes: true });
+    }
+  } catch (e) {}
+
+  // 7) Búsquedas: se anotan cuando la persona deja de escribir
+  ["buscarDesktop", "buscarMobile"].forEach(function (id) {
+    var inp = document.getElementById(id);
+    if (!inp) return;
+    var espera = null;
+    inp.addEventListener("input", function () {
+      clearTimeout(espera);
+      espera = setTimeout(function () {
+        var q = inp.value.trim().toLowerCase();
+        if (q.length < 3) return;
+        var n = 0;
+        try { n = _coinciden.length; } catch (e) {}
+        medir("buscar", { dato: q, dato2: String(n) });
+      }, 1400);
+    });
+  });
+})();
+
+
+// ── Movimiento de la tienda ───────────────────────────────────────────────────
+// Capa de animaciones que se suma a lo que ya hay: entradas al scroll, tarjetas con
+// profundidad, producto que vuela al carrito, pasos del pedido con transición y
+// confeti al confirmar. Si la persona pidió "reducir movimiento" no se activa.
+(function () {
+  try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (e) { return; }
+  var raf = window.requestAnimationFrame || function (f) { return setTimeout(f, 16); };
+  var fino = false;
+  try { fino = window.matchMedia("(hover: hover) and (pointer: fine)").matches; } catch (e) {}
+
+  // 1) Aparición escalonada de tarjetas al llegar a la pantalla
+  var io = null;
+  if ("IntersectionObserver" in window) {
+    var lote = 0, loteT = null;
+    io = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var el = en.target;
+        io.unobserve(el);
+        el.style.setProperty("--fx-d", Math.min(lote, 10) * 55 + "ms");
+        lote++;
+        clearTimeout(loteT);
+        loteT = setTimeout(function () { lote = 0; }, 120);
+        raf(function () { el.classList.add("fx-in"); });
+        setTimeout(function () { el.classList.remove("fx-pre", "fx-in"); el.style.removeProperty("--fx-d"); }, 1500);
+      });
+    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.05 });
+  }
+  function preparar(raiz) {
+    if (!io) return;
+    var lista = (raiz || document).querySelectorAll(".card:not(.fx-vista), .cat-card:not(.fx-vista)");
+    var alto = window.innerHeight || 800, marcar = [];
+    for (var i = 0; i < lista.length; i++) {
+      var r = lista[i].getBoundingClientRect();
+      lista[i].classList.add("fx-vista");
+      if (r.width && r.top > alto * 0.92) marcar.push(lista[i]);
+    }
+    marcar.forEach(function (el) { el.classList.add("fx-pre"); io.observe(el); });
+  }
+  preparar();
+  if (window.MutationObserver) {
+    var pend = false;
+    new MutationObserver(function () {
+      if (pend) return;
+      pend = true;
+      setTimeout(function () { pend = false; preparar(); }, 80);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  // 2) Inclinación 3D de tarjetas y de la portada (solo con mouse)
+  if (fino) {
+    var tarjeta = null, px = 0, py = 0, pend2 = false;
+    document.addEventListener("pointermove", function (e) {
+      var c = e.target.closest ? e.target.closest(".card") : null;
+      if (tarjeta && tarjeta !== c) tarjeta.classList.remove("fx-tilt");
+      tarjeta = c;
+      px = e.clientX; py = e.clientY;
+      var h = e.target.closest ? e.target.closest(".hero-slider") : null;
+      if (h && !pend2) {
+        pend2 = true;
+        raf(function () {
+          pend2 = false;
+          var r = h.getBoundingClientRect();
+          h.style.setProperty("--fx-hy", (((px - r.left) / r.width) - 0.5) * 9 + "deg");
+          h.style.setProperty("--fx-hx", (0.5 - ((py - r.top) / r.height)) * 7 + "deg");
+        });
+      }
+      if (!c || c.classList.contains("fx-pre")) return;
+      if (!pend2) {
+        pend2 = true;
+        raf(function () {
+          pend2 = false;
+          if (!tarjeta) return;
+          var r = tarjeta.getBoundingClientRect();
+          var x = (px - r.left) / r.width, y = (py - r.top) / r.height;
+          tarjeta.style.setProperty("--fx-ry", ((x - 0.5) * 7).toFixed(2) + "deg");
+          tarjeta.style.setProperty("--fx-rx", ((0.5 - y) * 6).toFixed(2) + "deg");
+          tarjeta.style.setProperty("--fx-mx", (x * 100).toFixed(1) + "%");
+          tarjeta.style.setProperty("--fx-my", (y * 100).toFixed(1) + "%");
+          tarjeta.classList.add("fx-tilt");
+        });
+      }
+    }, { passive: true });
+    document.addEventListener("pointerleave", function () {
+      if (tarjeta) tarjeta.classList.remove("fx-tilt");
+    }, true);
+    var hs = document.getElementById("heroSlider");
+    if (hs) hs.addEventListener("pointerleave", function () {
+      hs.style.setProperty("--fx-hy", "0deg"); hs.style.setProperty("--fx-hx", "0deg");
+    });
+  }
+
+  // 3) Producto que vuela al carrito
+  var origen = null;
+  document.addEventListener("click", function (e) {
+    try {
+      var t = e.target;
+      var b = t.closest && t.closest("[onclick*='addToCartFromBtn'],[onclick*='agregarDesdeIndice'],[onclick*='comprarAhora'],#prodBtnAgregar,#prodBtnComprar,.btn-agregar,.btn-add");
+      if (!b) return;
+      var img = null;
+      var cd = b.closest(".card");
+      if (cd) img = cd.querySelector(".card-img img");
+      if (!img) img = document.querySelector("#prodImgWrap img");
+      origen = { img: img, caja: img ? img.getBoundingClientRect() : b.getBoundingClientRect(), t: Date.now() };
+    } catch (er) {}
+  }, true);
+  function pop(el) {
+    if (!el) return;
+    el.classList.remove("fx-pop");
+    void el.offsetWidth;
+    el.classList.add("fx-pop");
+    setTimeout(function () { el.classList.remove("fx-pop"); }, 700);
+  }
+  function volar() {
+    var meta = document.getElementById("cartFab");
+    var o = origen;
+    origen = null;
+    if (!meta) return;
+    var m = meta.getBoundingClientRect();
+    if (!o || Date.now() - o.t > 1500) { pop(meta); return; }
+    var c = o.caja, lado = Math.max(46, Math.min(c.width, c.height, 120));
+    var d = document.createElement("div");
+    d.className = "fx-vuela";
+    if (o.img && o.img.currentSrc) d.style.backgroundImage = "url('" + o.img.currentSrc + "')";
+    d.style.width = lado + "px"; d.style.height = lado + "px";
+    d.style.left = (c.left + c.width / 2 - lado / 2) + "px";
+    d.style.top = (c.top + c.height / 2 - lado / 2) + "px";
+    document.body.appendChild(d);
+    var dx = (m.left + m.width / 2) - (c.left + c.width / 2);
+    var dy = (m.top + m.height / 2) - (c.top + c.height / 2);
+    if (d.animate) {
+      var a = d.animate([
+        { transform: "translate(0,0) scale(1) rotate(0deg)", opacity: 1 },
+        { transform: "translate(" + dx * 0.45 + "px," + (dy * 0.45 - 90) + "px) scale(.7) rotate(-8deg)", opacity: 1, offset: 0.5 },
+        { transform: "translate(" + dx + "px," + dy + "px) scale(.12) rotate(14deg)", opacity: 0.35 }
+      ], { duration: 720, easing: "cubic-bezier(.5,0,.75,.4)" });
+      a.onfinish = function () { d.remove(); pop(meta); pop(document.getElementById("cartCount")); pop(document.getElementById("cartCountHdr")); };
+    } else { d.remove(); pop(meta); }
+  }
+  if (typeof window.saveCart === "function") {
+    var guardar = window.saveCart, cant = -1;
+    window.saveCart = function () {
+      var r = guardar.apply(this, arguments);
+      try {
+        var n = 0;
+        cart.forEach(function (i) { n += Number(i.qty) || 0; });
+        if (cant >= 0 && n > cant) volar();
+        cant = n;
+      } catch (e) {}
+      return r;
+    };
+    try { var n0 = 0; cart.forEach(function (i) { n0 += Number(i.qty) || 0; }); cant = n0; } catch (e) {}
+  }
+
+  // 4) Números que suben hasta su valor
+  function contar(el) {
+    if (!el) return;
+    var txt = el.textContent, ini = -1, fin = -1;
+    for (var i = 0; i < txt.length; i++) {
+      var ch = txt.charAt(i), dig = ch >= "0" && ch <= "9";
+      if (ini < 0 && dig) ini = i;
+      if (ini >= 0 && (dig || ch === ".")) fin = i + 1; else if (ini >= 0) break;
+    }
+    if (ini < 0) return;
+    var meta = parseInt(txt.slice(ini, fin).split(".").join(""), 10);
+    if (!meta || meta < 10) return;
+    var pre = txt.slice(0, ini), pos = txt.slice(fin), t0 = null, dur = 650;
+    function paso(t) {
+      if (t0 === null) t0 = t;
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      if (p < 1) {
+        el.textContent = pre + Math.round(meta * e).toLocaleString("es-AR") + pos;
+        raf(paso);
+      } else el.textContent = txt;
+    }
+    raf(paso);
+  }
+  var panel = document.getElementById("cartPanel");
+  if (panel && window.MutationObserver) {
+    var estaba = false;
+    new MutationObserver(function () {
+      var abre = panel.classList.contains("open");
+      if (abre && !estaba) setTimeout(function () { contar(document.getElementById("cartTotal")); }, 120);
+      estaba = abre;
+    }).observe(panel, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  // 5) Pedido: barra de progreso, sentido de la transición y confirmación
+  var ultimoPaso = 0;
+  function confeti() {
+    var cont = document.createElement("div");
+    cont.className = "fx-conf";
+    var col = ["#f97316", "#ea580c", "#fdba74", "#facc15", "#fb923c", "#38bdf8", "#f472b6"];
+    var ancho = window.innerWidth || 400;
+    for (var i = 0; i < 46; i++) {
+      var p = document.createElement("i");
+      p.style.left = (ancho / 2 + (Math.random() - 0.5) * ancho * 0.5) + "px";
+      p.style.background = col[i % col.length];
+      p.style.setProperty("--x", ((Math.random() - 0.5) * ancho * 0.9) + "px");
+      p.style.setProperty("--r", (Math.random() * 900 - 450) + "deg");
+      p.style.setProperty("--d", (Math.random() * 0.35) + "s");
+      p.style.setProperty("--t", (1.9 + Math.random() * 1.2) + "s");
+      p.style.top = (Math.random() * 18 + 8) + "vh";
+      cont.appendChild(p);
+    }
+    document.body.appendChild(cont);
+    setTimeout(function () { cont.remove(); }, 3600);
+  }
+  function tilde() {
+    var ic = document.querySelector("#step5 .confirm-icon");
+    if (!ic || ic.classList.contains("fx-ok")) return;
+    ic.classList.add("fx-ok");
+    ic.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="fx-b" cx="50" cy="50" r="40"/><circle class="fx-c" cx="50" cy="50" r="28"/><path class="fx-t" d="M36 51 L46 61 L65 40"/></svg>';
+  }
+  if (typeof window.irAStep === "function") {
+    var pasoO = window.irAStep;
+    window.irAStep = function (n) {
+      var r = pasoO.apply(this, arguments);
+      try {
+        var m = document.querySelector("#checkoutModal .modal");
+        if (m) m.classList.toggle("fx-atras", n < ultimoPaso);
+        var pasos = document.querySelector("#checkoutModal .steps");
+        if (pasos) pasos.style.setProperty("--fx-p", (Math.min(n, 4) / 4 * 100) + "%");
+        if (n === 1) setTimeout(function () { contar(document.getElementById("orderTotalAmt")); }, 200);
+        if (n === 4) setTimeout(function () { contar(document.getElementById("pagoMonto")); }, 250);
+        if (n === 5) { tilde(); confeti(); }
+        ultimoPaso = n;
+      } catch (e) {}
+      return r;
+    };
+  }
+  if (typeof window.cerrarCheckout === "function") {
+    var cerrarO = window.cerrarCheckout;
+    window.cerrarCheckout = function () {
+      ultimoPaso = 0;
+      return cerrarO.apply(this, arguments);
+    };
+  }
+})();
