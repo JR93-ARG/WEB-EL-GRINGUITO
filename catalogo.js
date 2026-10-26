@@ -1,5 +1,5 @@
-// El Gringuito — generado 2026-10-26 20:56
-window.JR_VERSION = "2026-10-26 20:56";
+// El Gringuito — generado 2026-10-26 22:39
+window.JR_VERSION = "2026-10-26 22:39";
 window.MARCA = window.MARCA || {"nombre":"El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
 
 

@@ -381,10 +381,11 @@ main{max-width:920px;margin:0 auto;padding:14px 13px 40px}
       </div>
 
       <div class="tarjeta">
-        <div class="tarjeta-tit">Margen por categoría</div>
+        <div class="tarjeta-tit">Categorías: margen y visibilidad</div>
         <div class="fila-det" style="margin-bottom:12px">
-          Vacío usa el margen general. El margen de un producto puntual
-          se edita desde Productos y tiene prioridad.
+          Destildá "Mostrar" para sacar una categoría entera de la tienda.
+          Margen vacío usa el general; el de un producto puntual se edita
+          desde Productos y tiene prioridad.
         </div>
         <div id="listaCatMarkup"><div class="cargando">Cargando…</div></div>
         <button class="btn btn-full" id="btnGuardarMarkups" style="margin-top:14px">
@@ -1855,6 +1856,7 @@ const NOMBRES_GRUPO = {
   negocio: "Datos del negocio", precios: "Precios",
   catalogo: "Catálogo", pedidos: "Pedidos",
   comprobantes: "Comprobantes", general: "General",
+  proveedores: "Proveedores (qué se trae a la tienda)",
 };
 
 async function cargarConfig() {
@@ -2033,6 +2035,9 @@ async function cargarCatMarkup() {
           <div class="fila-nom">${esc(c.nombre || c.slug)}</div>
           <div class="fila-det">${c.productos} producto${c.productos === 1 ? "" : "s"}</div>
         </div>
+        <label class="check" style="margin:0;flex-shrink:0" title="Destildá para ocultar la categoría de la tienda">
+          <input type="checkbox" class="cat-visible" data-slug="${esc(c.slug)}" ${c.visible === false ? "" : "checked"}>
+          <span style="font-size:12px">Mostrar</span></label>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
           <input type="number" class="mk-input" data-slug="${esc(c.slug)}"
             data-nombre="${esc(c.nombre || c.slug)}"
@@ -2058,13 +2063,14 @@ async function guardarMarkups() {
         body: JSON.stringify({
           markup_pct: v === "" ? null : Number(v),
           nombre: el.dataset.nombre,
+          visible: (document.querySelector('.cat-visible[data-slug="' + CSS.escape(el.dataset.slug) + '"]') || {}).checked !== false,
         }),
       });
       if (!r.ok) throw new Error(r.error);
       n++;
     }
     avisar("avisoMarkups",
-      `${n} categorías guardadas. Regenerá el catálogo para que se apliquen.`);
+      `${n} categorías guardadas. Tocá "Publicar cambios ahora" en Productos para que se apliquen.`);
   } catch (e) {
     avisar("avisoMarkups", e.message, false);
   } finally {
