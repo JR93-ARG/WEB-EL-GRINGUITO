@@ -1,5 +1,5 @@
-// Librería El Gringuito — generado 2026-10-27 01:40
-window.JR_VERSION = "2026-10-27 01:40";
+// Librería El Gringuito — generado 2026-10-27 02:03
+window.JR_VERSION = "2026-10-27 02:03";
 window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
 
 
