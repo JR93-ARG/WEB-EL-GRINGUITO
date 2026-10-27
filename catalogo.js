@@ -1,6 +1,6 @@
-// El Gringuito — generado 2026-10-26 22:39
-window.JR_VERSION = "2026-10-26 22:39";
-window.MARCA = window.MARCA || {"nombre":"El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
+// Librería El Gringuito — generado 2026-10-27 01:40
+window.JR_VERSION = "2026-10-27 01:40";
+window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
 
 
 const CART_PHONE = "5493810000000";
@@ -103,7 +103,7 @@ function addToCartFromBtn(btn) {
   btn.dataset.textoOriginal = textoOriginal;
 
   btn.innerHTML = "✓";
-  btn.style.background = "#ea580c";
+  btn.style.background = "#e8267d";
   btn.style.color = "#fff";
 
   setTimeout(function() {
@@ -208,8 +208,8 @@ function renderCart() {
         <div class="cart-item-info">
           <div class="cart-item-name">${ii.name}</div>
           <div class="cart-item-unit">
-            <s>${fmt(ii.price)}</s> → <span style="color:#ea580c;font-weight:700">${fmt(precioDesc)}</span> c/u
-            <span style="color:#ea580c;font-size:10px">(${pctI}% off transf.)</span>
+            <s>${fmt(ii.price)}</s> → <span style="color:#e8267d;font-weight:700">${fmt(precioDesc)}</span> c/u
+            <span style="color:#e8267d;font-size:10px">(${pctI}% off transf.)</span>
           </div>
           <div class="cart-item-subtotal">${fmt(ii.price * ii.qty)}</div>
         </div>
@@ -234,7 +234,7 @@ function renderCart() {
   const descEl = document.getElementById("cartDescuento");
   if (descEl) {
     if (cart.length && descuento > 0) {
-      descEl.innerHTML = '<div style="font-size:11px;color:#ea580c;text-align:right;margin-top:2px">'
+      descEl.innerHTML = '<div style="font-size:11px;color:#e8267d;text-align:right;margin-top:2px">'
         + 'Con transferencia: ' + fmt(totalTransf)
         + ' <span style="color:#aaa">(' + pctTexto + '% off)</span></div>';
     } else {
@@ -260,7 +260,7 @@ document.getElementById("btnShareCart").addEventListener("click", () => {
   const lineas = cart.map(i => `  • ${i.qty}x ${i.name}  =>  ${fmt(i.price*i.qty)}`).join("\n");
   const total  = cart.reduce((s,i)=>s+i.price*i.qty,0);
   const msg    = [
-    "*Lista de productos - " + "El Gringuito" + "*",
+    "*Lista de productos - " + "Librería El Gringuito" + "*",
     "",
     lineas,
     "",
@@ -760,14 +760,14 @@ function actualizarPaso4() {
     return '<div class="resumen-linea" style="font-size:12px">' +
       '<span>' + i.qty + 'x ' + i.name + '</span>' +
       '<span style="text-align:right"><s style="color:#bbb">' + fmt(i.price*i.qty) + '</s><br>' +
-      '<span style="color:#ea580c">' + fmt(precI*i.qty) + ' (' + pctI + '% off)</span></span></div>';
+      '<span style="color:#e8267d">' + fmt(precI*i.qty) + ' (' + pctI + '% off)</span></span></div>';
   }).join("");
 
   document.getElementById("resumenFinal").innerHTML =
     lineasDetalle +
     '<div style="height:1px;background:#e0e0e0;margin:6px 0"></div>' +
     '<div class="resumen-linea"><span>Subtotal lista</span><span>' + fmt(subtotal) + '</span></div>' +
-    '<div class="resumen-linea descuento"><span>Descuento transferencia (' + pctTexto + '%)</span><span style="color:#ea580c">-' + fmt(descuento) + '</span></div>' +
+    '<div class="resumen-linea descuento"><span>Descuento transferencia (' + pctTexto + '%)</span><span style="color:#e8267d">-' + fmt(descuento) + '</span></div>' +
     '<div class="resumen-linea envio"><span>Envio</span><span>' + envioTxt + '</span></div>';
 
   // Transferencia: precio catálogo - descuento proporcional
@@ -812,7 +812,7 @@ function onComprobanteChange(input) {
   const img         = document.getElementById("comprobanteImg");
   const nombre      = document.getElementById("comprobanteNombre");
 
-  area.style.borderColor = "#ea580c";
+  area.style.borderColor = "#e8267d";
   placeholder.style.display = "none";
   preview.style.display     = "block";
   nombre.textContent        = file.name;
@@ -909,7 +909,7 @@ document.getElementById("btnEnviar").addEventListener("click", async () => {
 
     const lineas = cart.map(i => `  - ${i.qty}x ${limpiarTexto(i.name)}  =>  ${fmt(i.price*i.qty)}`).join("\n");
     const msg = [
-      "*Nuevo pedido - " + "El Gringuito" + "*","",
+      "*Nuevo pedido - " + "Librería El Gringuito" + "*","",
       `Cliente:  ${nombre}`,`DNI:      ${dni}`,`Telefono: ${tel}`,`Entrega:  ${direccion}`,
       notas?`Notas:    ${notas}`:null,"",
       "*Productos:*", lineas,"",
@@ -967,7 +967,7 @@ document.getElementById("btnEnviar").addEventListener("click", async () => {
           };
           linkEl.querySelector(".tracking-wa").onclick = function() {
             var msgWA = encodeURIComponent(
-            "Hola " + nombre.split(" ")[0] + "! Tu pedido " + nroPedido + " fue registrado en " + "El Gringuito" + ".\n\n" +
+            "Hola " + nombre.split(" ")[0] + "! Tu pedido " + nroPedido + " fue registrado en " + "Librería El Gringuito" + ".\n\n" +
             "Segui el estado de tu compra en:\n" + linkTracking + "\n\n" +
             "Total: " + fmt(totalFinal) + "\n" +
             "Cuando transfieras, envianos el comprobante desde aca:\n" +
@@ -1587,7 +1587,7 @@ function abrirProducto(dataStr) {
   if (ahorroEl && p.precioCatalogo && p.precioConDesc) {
     var ahorro = p.precioCatalogo - p.precioConDesc;
     ahorroEl.innerHTML =
-      '<span style="display:inline-flex;align-items:center;gap:5px;background:#ffedd5;color:#9a3412;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700">'
+      '<span style="display:inline-flex;align-items:center;gap:5px;background:#ffe0ef;color:#b8136a;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700">'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
       + 'Ahorrás ' + fmtMV(ahorro) + ' (' + (p.pctIndTexto||5) + '% off) con transferencia'
       + '</span>';
@@ -1662,7 +1662,7 @@ function abrirProducto(dataStr) {
     else cart.push({key:key,id:p.id,name:p.name,price:p.precioCatalogo,reqMin:p.reqMin,baseUnits:p.baseUnits,pv:p.pv||"",qty:n});
     saveCart();
     btnAgregar.innerHTML = "&#10003; Agregado (" + n + ")";
-    btnAgregar.style.background = "#ea580c";
+    btnAgregar.style.background = "#e8267d";
     setTimeout(function(){ btnAgregar.innerHTML = HTML_ADD; btnAgregar.style.background=""; }, 1600);
   };
 
@@ -2296,9 +2296,9 @@ function renderCredito() {
       '<div style="font-size:12px;color:#854F0B;margin-bottom:2px;font-weight:600">Pagás hoy (anticipo ' + creditoAntPct + '%)</div>' +
       '<div style="font-size:28px;font-weight:800;color:#111">' + fmtC(r.anticipo) + '</div>' +
     '</div>' +
-    '<div style="background:#fff7ed;border:1px solid #ea580c;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
-      '<div style="font-size:12px;color:#9a3412;margin-bottom:2px;font-weight:600">Tu cuota mensual</div>' +
-      '<div style="font-size:28px;font-weight:800;color:#ea580c">' + fmtC(r.cuota) + '</div>' +
+    '<div style="background:#fff0f7;border:1px solid #e8267d;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
+      '<div style="font-size:12px;color:#b8136a;margin-bottom:2px;font-weight:600">Tu cuota mensual</div>' +
+      '<div style="font-size:28px;font-weight:800;color:#e8267d">' + fmtC(r.cuota) + '</div>' +
       '<div style="font-size:11px;color:#888">x ' + creditoCuotasSel + ' cuotas · 6% interés mensual sobre saldo</div>' +
     '</div>' +
     '<div style="background:#f9f9f9;border-radius:10px;padding:10px;text-align:center">' +
@@ -2349,7 +2349,7 @@ function renderCredito() {
     }).catch(function(){});
 
     var msg = encodeURIComponent(
-      "SOLICITUD DE FINANCIACION - " + "El Gringuito" +
+      "SOLICITUD DE FINANCIACION - " + "Librería El Gringuito" +
       " | Producto: " + creditoNombre +
       " | Precio lista: " + fmtC(creditoPrecio) +
       " | Anticipo: " + fmtC(r.anticipo) +
@@ -2947,7 +2947,7 @@ setTimeout(agregarBadgesSociales, 2000);
   function confeti() {
     var cont = document.createElement("div");
     cont.className = "fx-conf";
-    var col = ["#f97316", "#ea580c", "#fdba74", "#facc15", "#fb923c", "#38bdf8", "#f472b6"];
+    var col = ["#ff6fae", "#e8267d", "#ffd23f", "#facc15", "#fb923c", "#38bdf8", "#f472b6"];
     var ancho = window.innerWidth || 400;
     for (var i = 0; i < 46; i++) {
       var p = document.createElement("i");

@@ -11,10 +11,10 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --marca:#c2410c; --marca-2:#ea580c; --marca-claro:#fff7ed; --marca-borde:#fed7aa;
+  --marca:#ec2f86; --marca-2:#e8267d; --marca-claro:#fff0f7; --marca-borde:#ffc2dc;
   --tinta:#1e1b30; --texto:#4b5563; --gris:#6b7280; --suave:#9ca3af;
   --linea:#e9e7f0; --fondo:#f7f7fb; --blanco:#fff;
-  --wa:#25D366; --rojo:#dc2626; --naranja:#f59e0b; --azul:#1e3a8a;
+  --wa:#25D366; --rojo:#dc2626; --naranja:#f59e0b; --azul:#19b4e8;
   --r:10px;
 }
 body{
@@ -60,7 +60,7 @@ input[type=color]{width:52px;height:38px;padding:3px;border:1.5px solid var(--li
 /* ── Botones ── */
 .btn{background:var(--marca);color:#fff;border:none;padding:12px 20px;
   border-radius:var(--r);font-weight:700;cursor:pointer;transition:background .15s}
-.btn:hover{background:#9a3412}
+.btn:hover{background:#b8136a}
 .btn:disabled{background:#c8c8d0;cursor:not-allowed}
 .btn-full{width:100%}
 .btn-sec{background:var(--blanco);color:var(--texto);border:1.5px solid var(--linea)}
@@ -78,7 +78,7 @@ input[type=color]{width:52px;height:38px;padding:3px;border:1.5px solid var(--li
 .error{background:#fef2f2;border:1px solid #fecaca;color:var(--rojo);
   border-radius:var(--r);padding:10px 13px;font-size:13px;margin-bottom:14px}
 .aviso{padding:11px 14px;border-radius:var(--r);font-size:13px;margin-top:12px}
-.aviso-ok{background:var(--marca-claro);color:#9a3412;border:1px solid var(--marca-borde)}
+.aviso-ok{background:var(--marca-claro);color:#b8136a;border:1px solid var(--marca-borde)}
 .aviso-mal{background:#fef2f2;color:var(--rojo);border:1px solid #fecaca}
 
 /* ── Cabecera ── */
@@ -168,7 +168,7 @@ main{max-width:920px;margin:0 auto;padding:14px 13px 40px}
 .card-n .n{font-size:22px;font-weight:800;line-height:1.1}
 .card-n .l{font-size:11px;margin-top:2px}
 .c-amarillo{background:#fef9c3}.c-amarillo .n,.c-amarillo .l{color:#854d0e}
-.c-verde{background:var(--marca-claro)}.c-verde .n,.c-verde .l{color:#9a3412}
+.c-verde{background:var(--marca-claro)}.c-verde .n,.c-verde .l{color:#b8136a}
 .c-azul{background:#eff6ff}.c-azul .n,.c-azul .l{color:#1e40af}
 .c-gris{background:#f3f4f6}.c-gris .n,.c-gris .l{color:var(--texto)}
 
@@ -198,13 +198,13 @@ main{max-width:920px;margin:0 auto;padding:14px 13px 40px}
 .badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;
   display:inline-block;white-space:nowrap}
 .b-pend{background:#fef9c3;color:#854d0e}
-.b-verif{background:var(--marca-claro);color:#9a3412}
+.b-verif{background:var(--marca-claro);color:#b8136a}
 .b-prep{background:#eff6ff;color:#1e40af}
 .b-env{background:#e0f2fe;color:#0c4a6e}
 .b-listo{background:#f5f3ff;color:#5b21b6}
-.b-entr{background:#ffedd5;color:#7c2d12}
+.b-entr{background:#ffe0ef;color:#1f2a5c}
 .b-canc{background:#fee2e2;color:#991b1b}
-.b-on{background:var(--marca-claro);color:#9a3412}
+.b-on{background:var(--marca-claro);color:#b8136a}
 .b-off{background:#f3f4f6;color:var(--gris)}
 
 /* ── Panel de detalle ── */
@@ -454,7 +454,7 @@ main{max-width:920px;margin:0 auto;padding:14px 13px 40px}
         <label class="check"><input type="checkbox" id="plLogo" checked><span>Pie con logo, envíos y WhatsApp</span></label>
         <div class="campo" style="margin-top:12px">
           <label>Color principal</label>
-          <input type="color" id="plColor" value="#c2410c">
+          <input type="color" id="plColor" value="#ec2f86">
         </div>
       </div>
 
@@ -1413,7 +1413,8 @@ function formularioPropio(datos) {
       }
       if (!r.ok) throw new Error(r.error || "No se pudo guardar");
       cerrarModal(); cargarProductos();
-      $("pubEstado").textContent = "Hay cambios sin publicar: tocá “Publicar cambios ahora” o esperá la actualización diaria.";
+      $("pubEstado").textContent = "Guardado. Se publica solo en unos segundos…";
+      seguirPublicacion();
     } catch (e) {
       g.disabled = false; g.textContent = "Guardar";
       avisar("avisoModal", e.message, false);
@@ -2070,7 +2071,7 @@ async function guardarMarkups() {
       n++;
     }
     avisar("avisoMarkups",
-      `${n} categorías guardadas. Tocá "Publicar cambios ahora" en Productos para que se apliquen.`);
+      `${n} categorías guardadas. La tienda se actualiza sola en uno o dos minutos.`);
   } catch (e) {
     avisar("avisoMarkups", e.message, false);
   } finally {
@@ -2150,7 +2151,7 @@ function actualizarContador() {
 // ── Tema de las placas ──────────────────────────────────────────
 const TEMA = {
   bg: "#f7f7fb", card: "#ffffff",
-  primary: "#c2410c", secondary: "#ea580c", primarySoft: "#fff7ed",
+  primary: "#ec2f86", secondary: "#e8267d", primarySoft: "#fff0f7",
   text: "#1e1b30", text2: "#4b5563", muted: "#9ca3af",
   line: "#e9e7f0", discount: "#dc2626",
   outerMargin: 40, gridGap: 20, cardRadius: 22, font: "Inter",
@@ -2351,7 +2352,7 @@ function dibujarEncabezado(x, ancho, y, h, color, titulo, bajada, padTop = 0) {
 // Ícono de carrito en círculo verde, abajo a la derecha de la tarjeta
 function dibujarCarrito(x, cx, cy, d, color) {
   x.save();
-  x.shadowColor = "rgba(194,65,12,.28)";
+  x.shadowColor = "rgba(236,47,134,.28)";
   x.shadowBlur = 10;
   x.shadowOffsetY = 3;
   x.fillStyle = color;

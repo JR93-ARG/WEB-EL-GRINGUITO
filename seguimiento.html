@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seguimiento de pedido — El Gringuito</title>
+<title>Seguimiento de pedido — Librería El Gringuito</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Segoe UI", system-ui, sans-serif; background: #f1f5f9; min-height: 100vh; }
@@ -14,7 +14,7 @@
   }
   .header img { height: 44px; width: auto; }
   .header-text h1 { font-size: 16px; font-weight: 700; }
-  .header-text p  { font-size: 12px; color: #fdba74; }
+  .header-text p  { font-size: 12px; color: #ffd23f; }
 
   .container { max-width: 560px; margin: 24px auto; padding: 0 16px 40px; }
 
@@ -40,7 +40,7 @@
     width: 2px; height: calc(100% + 4px);
     background: #e2e8f0;
   }
-  .tl-step.done::after { background: #ea580c; }
+  .tl-step.done::after { background: #e8267d; }
   .tl-icon {
     width: 36px; height: 36px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -50,12 +50,12 @@
     z-index: 1;
   }
   .tl-step.done .tl-icon {
-    background: #ffedd5; color: #ea580c;
-    border-color: #ea580c;
+    background: #ffe0ef; color: #e8267d;
+    border-color: #e8267d;
   }
   .tl-step.active .tl-icon {
-    background: #dbeafe; color: #1e3a8a;
-    border-color: #1e3a8a; animation: pulse 1.5s infinite;
+    background: #dbeafe; color: #19b4e8;
+    border-color: #19b4e8; animation: pulse 1.5s infinite;
   }
   @keyframes pulse {
     0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,.3); }
@@ -84,7 +84,7 @@
   }
   .prod-item:last-child { border-bottom: none; }
   .prod-nombre { color: #1e293b; flex: 1; padding-right: 8px; }
-  .prod-sub    { color: #ea580c; font-weight: 700; white-space: nowrap; }
+  .prod-sub    { color: #e8267d; font-weight: 700; white-space: nowrap; }
 
   .total-row {
     display: flex; justify-content: space-between;
@@ -92,7 +92,7 @@
     border-top: 2px solid #f1f5f9;
     font-size: 16px; font-weight: 800;
   }
-  .total-val { color: #ea580c; }
+  .total-val { color: #e8267d; }
 
   .badge-estado {
     display: inline-block; padding: 4px 12px; border-radius: 20px;
@@ -125,7 +125,7 @@
 
 <div class="header">
   <div class="header-text">
-    <h1>El Gringuito</h1>
+    <h1>Librería El Gringuito</h1>
     <p>Seguimiento de tu pedido</p>
   </div>
 </div>
@@ -133,7 +133,7 @@
 <div class="container">
   <div id="app"><div class="loading">⏳ Cargando estado del pedido...</div></div>
   <div class="footer">
-    El Gringuito · Tucumán, Argentina · <a href="https://jr93-arg.github.io/WEB-EL-GRINGUITO" style="color:#aaa">jr93-arg.github.io/WEB-EL-GRINGUITO</a>
+    Librería El Gringuito · Tucumán, Argentina · <a href="https://jr93-arg.github.io/WEB-EL-GRINGUITO" style="color:#aaa">jr93-arg.github.io/WEB-EL-GRINGUITO</a>
   </div>
 </div>
 
@@ -151,10 +151,10 @@ const ESTADOS = [
 
 const COLORES_BADGE = {
   "Pendiente verificacion": { bg: "#fef9c3", color: "#854d0e" },
-  "Pago verificado":        { bg: "#ffedd5", color: "#9a3412" },
+  "Pago verificado":        { bg: "#ffe0ef", color: "#b8136a" },
   "En preparacion":         { bg: "#dbeafe", color: "#1e3a8a" },
   "Enviado":                { bg: "#e0f2fe", color: "#0c4a6e" },
-  "Entregado":              { bg: "#ffedd5", color: "#9a3412" },
+  "Entregado":              { bg: "#ffe0ef", color: "#b8136a" },
   "Cancelado":              { bg: "#fee2e2", color: "#991b1b" },
 };
 

@@ -1,0 +1,196 @@
+/* ============================================================
+   Tema "librería" — Librería El Gringuito
+   Se carga DESPUÉS de catalogo.css y le cambia la impronta:
+   hoja cuadriculada, resaltadores, notas adhesivas y botones
+   tipo sticker con borde de marcador.
+   ============================================================ */
+:root{
+  --tinta-marcador:#1d1b2e;
+  --rosa:#ec2f86; --rosa-claro:#ffe0ef;
+  --amarillo:#ffd23f; --amarillo-claro:#fff6cc;
+  --celeste:#19b4e8; --celeste-claro:#dff4fd;
+  --lila:#a78bfa; --lila-claro:#efe9ff;
+  --durazno:#ffb38a; --menta:#5fd3b3;
+  --navy:#1f2a5c;
+  --sticker:3px 3px 0 var(--tinta-marcador);
+  --sticker-hover:5px 5px 0 var(--tinta-marcador);
+  --f-titulo:"Fredoka","Segoe UI",system-ui,sans-serif;
+  --f-mano:"Caveat","Segoe Print",cursive;
+  --fondo:#fbfdff;
+}
+
+/* ── Hoja de cuaderno ── */
+body{
+  background-color:var(--fondo);
+  background-image:
+    linear-gradient(rgba(25,180,232,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(25,180,232,.07) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+
+/* ── Barra superior: cinta washi de colores ── */
+.topbar{background:var(--navy);position:relative}
+.topbar::after{
+  content:"";position:absolute;left:0;right:0;bottom:-5px;height:5px;z-index:2;
+  background:repeating-linear-gradient(90deg,
+    var(--rosa) 0 60px,var(--amarillo) 60px 120px,var(--celeste) 120px 180px,var(--lila) 180px 240px);
+}
+
+/* ── Header ── */
+header{box-shadow:none;border-bottom:2px solid var(--tinta-marcador)}
+.logo-name{
+  font-family:var(--f-titulo);font-weight:700;font-size:26px;letter-spacing:.5px;
+  text-transform:uppercase;line-height:1;
+}
+.logo-name .lt{
+  display:inline-block;-webkit-text-stroke:1.2px var(--tinta-marcador);
+  paint-order:stroke fill;
+}
+.logo-name .lt:nth-child(4n+1){color:var(--celeste);transform:rotate(-4deg)}
+.logo-name .lt:nth-child(4n+2){color:var(--rosa);transform:rotate(3deg)}
+.logo-name .lt:nth-child(4n+3){color:var(--amarillo);transform:rotate(-2deg)}
+.logo-name .lt:nth-child(4n){color:var(--lila);transform:rotate(4deg)}
+.logo-name .lt.esp{width:.32em}
+.logo-tag{
+  font-family:var(--f-mano);font-size:16px;color:var(--navy);margin-top:3px;
+  background:linear-gradient(transparent 55%,var(--amarillo) 55% 90%,transparent 90%);
+  display:inline-block;padding:0 4px;
+}
+.search-wrap input{border:2px solid var(--tinta-marcador);border-radius:14px 0 0 14px}
+.search-cat{border-top:2px solid var(--tinta-marcador);border-bottom:2px solid var(--tinta-marcador)}
+.search-go{
+  background:var(--amarillo);color:var(--tinta-marcador);
+  border:2px solid var(--tinta-marcador);border-radius:0 14px 14px 0;
+}
+.search-go:hover{background:var(--rosa);color:#fff}
+
+/* ── Navegación ── */
+.nav{border-top:none;border-bottom:2px dashed rgba(29,27,46,.18)}
+.cat-dropdown-btn{
+  background:var(--rosa);border:2px solid var(--tinta-marcador);box-shadow:var(--sticker);
+  border-radius:14px;font-family:var(--f-titulo);letter-spacing:.4px;
+}
+.cat-dropdown-btn:hover{background:var(--celeste);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.nav-link{font-family:var(--f-titulo);font-weight:500;font-size:15px}
+.nav-link.active,.nav-link:hover{
+  color:var(--tinta-marcador);
+  background:linear-gradient(transparent 58%,var(--amarillo) 58% 92%,transparent 92%);
+}
+
+/* ── Hero: acuarela clara en vez del bloque oscuro ── */
+.hero{
+  background:
+    radial-gradient(circle at 12% 20%,rgba(25,180,232,.28),transparent 42%),
+    radial-gradient(circle at 78% 85%,rgba(236,47,134,.22),transparent 45%),
+    radial-gradient(circle at 92% 10%,rgba(255,210,63,.35),transparent 38%),
+    #fff;
+  border:2.5px solid var(--tinta-marcador);box-shadow:6px 6px 0 var(--tinta-marcador);
+  border-radius:26px;
+}
+.hero::after{display:none}
+.hero-badge{
+  background:var(--amarillo);color:var(--tinta-marcador);border:none;backdrop-filter:none;
+  font-family:var(--f-mano);font-size:20px;font-weight:700;letter-spacing:0;
+  border-radius:3px;padding:6px 16px 8px;transform:rotate(-3deg);
+  box-shadow:0 6px 12px rgba(29,27,46,.15);position:relative;
+}
+.hero-badge::before{
+  content:"";position:absolute;top:-9px;left:50%;width:14px;height:14px;margin-left:-7px;
+  border-radius:50%;background:var(--celeste);border:2px solid var(--tinta-marcador);
+}
+.hero-t{
+  font-family:var(--f-titulo);font-weight:700;color:var(--navy);
+  font-size:46px;letter-spacing:-.5px;line-height:1.08;
+}
+.hero-t em{
+  color:var(--rosa);
+  background:linear-gradient(transparent 60%,var(--amarillo) 60% 92%,transparent 92%);
+  padding:0 6px;
+}
+.hero-s{color:#4a4866;font-size:16px}
+.hero-b1{
+  background:#fff;color:var(--tinta-marcador);border:2px solid var(--tinta-marcador);
+  box-shadow:var(--sticker);border-radius:14px;font-family:var(--f-titulo);font-weight:600;
+}
+.hero-b1:hover{background:var(--celeste-claro);border-color:var(--tinta-marcador);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.hero-b2{
+  background:var(--rosa);color:#fff;border:2px solid var(--tinta-marcador);
+  box-shadow:var(--sticker);border-radius:14px;font-family:var(--f-titulo);font-weight:600;
+}
+.hero-b2:hover{transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.hero-tr{color:var(--navy)}
+.hero-tr svg{opacity:1;color:var(--rosa)}
+.hero-tr-t{color:var(--navy);font-family:var(--f-titulo);font-size:13px}
+.hero-tr-s{color:#6b6987}
+.hero-slider{border:2.5px solid var(--tinta-marcador);box-shadow:6px 6px 0 var(--amarillo),6px 6px 0 2.5px var(--tinta-marcador);transform:rotate(1.5deg)}
+.hero-slide-off{background:var(--amarillo-claro);border-color:var(--amarillo);color:var(--tinta-marcador)}
+@media(max-width:768px){
+  .hero{box-shadow:4px 4px 0 var(--tinta-marcador)}
+  .hero-t{font-size:31px}
+}
+
+/* ── Categorías: círculos de colores como en el flyer ── */
+.cat-card{border:2px solid var(--tinta-marcador);border-radius:18px;box-shadow:var(--sticker)}
+.cat-card:hover{transform:translate(-2px,-3px) rotate(-1.5deg);box-shadow:var(--sticker-hover);border-color:var(--tinta-marcador)}
+.cat-card-ic{
+  width:58px;height:58px;border-radius:50%;color:var(--tinta-marcador);
+  background:var(--rosa-claro);border:2px solid var(--tinta-marcador);
+}
+.cats-grid .cat-card:nth-child(5n+2) .cat-card-ic{background:var(--amarillo-claro)}
+.cats-grid .cat-card:nth-child(5n+3) .cat-card-ic{background:var(--celeste-claro)}
+.cats-grid .cat-card:nth-child(5n+4) .cat-card-ic{background:var(--lila-claro)}
+.cats-grid .cat-card:nth-child(5n+5) .cat-card-ic{background:#ffe8dc}
+.cat-card-n{font-family:var(--f-titulo);font-size:13px;font-weight:600;color:var(--navy)}
+.cat-card.ver-todas{background:var(--amarillo)}
+.cat-card.ver-todas .cat-card-ic{background:#fff}
+.cat-card.ver-todas .cat-card-n{color:var(--tinta-marcador)}
+@media(max-width:640px){.cat-card-ic{width:40px;height:40px}}
+
+/* ── Beneficios: nota adhesiva ── */
+.benef-bar{background:var(--amarillo-claro);border:2px dashed var(--amarillo);border-radius:6px}
+.benef-ic{background:#fff;border:2px solid var(--tinta-marcador);color:var(--rosa)}
+.benef-t{color:var(--navy);font-family:var(--f-titulo)}
+
+/* ── Títulos de sección: resaltador ── */
+.sec-t{font-family:var(--f-titulo);font-weight:700;color:var(--navy);font-size:27px;padding-bottom:0;z-index:0;display:inline-block}
+.sec-t::after{
+  left:-6px;right:-6px;width:auto;bottom:2px;height:12px;z-index:-1;border-radius:3px;
+  background:var(--amarillo);transform:rotate(-1deg);opacity:.85;
+}
+.sec-link{color:var(--rosa);font-family:var(--f-titulo)}
+.cat-title,.destacados-titulo,.novedades-titulo{
+  font-family:var(--f-mano);font-size:24px;font-weight:700;text-transform:none;letter-spacing:0;
+  color:var(--navy);border-left:none;padding-left:0;
+}
+.cat-title::before,.destacados-titulo::before,.novedades-titulo::before{content:"✎ ";color:var(--rosa)}
+.cat-title::after{height:0;border-top:2px dashed rgba(29,27,46,.2);background:none}
+.destacados-wrap{
+  border:2px solid var(--tinta-marcador);border-radius:22px;
+  background:linear-gradient(#fff,#fff) padding-box;box-shadow:var(--sticker);
+}
+
+/* ── Tarjetas de producto: stickers ── */
+.card{border:2px solid var(--tinta-marcador);border-radius:18px}
+.card:hover{transform:translate(-2px,-3px);box-shadow:var(--sticker-hover);border-color:var(--tinta-marcador)}
+.card-img{background:#fff;border-bottom:2px dashed rgba(29,27,46,.15)}
+.card-name{font-weight:600}
+.card-price{font-family:var(--f-titulo);font-weight:700;color:var(--navy)}
+.badge-nuevo{
+  background:var(--amarillo);color:var(--tinta-marcador);
+  font-family:var(--f-mano);font-size:15px;font-weight:700;text-transform:none;letter-spacing:0;
+  border-radius:2px;padding:2px 10px 3px;transform:rotate(-6deg);
+  box-shadow:0 3px 6px rgba(29,27,46,.18);
+}
+.buy-btn{
+  background:var(--rosa);border:2px solid var(--tinta-marcador);border-radius:12px;
+  font-family:var(--f-titulo);font-weight:600;
+}
+.buy-btn:hover{background:var(--celeste)}
+
+/* ── Pie: azul del flyer ── */
+body > footer{
+  background:var(--navy);color:#fff;font-family:var(--f-titulo);font-size:13px;
+  border-top:5px solid var(--amarillo);padding:22px 20px 96px;text-align:center;line-height:1.9;
+}
+body > footer a{color:var(--amarillo);text-decoration:none;font-weight:600}
+body > footer .pie-mano{font-family:var(--f-mano);font-size:22px;color:var(--amarillo)}
