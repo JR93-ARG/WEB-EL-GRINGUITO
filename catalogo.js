@@ -1,9 +1,9 @@
-// Librería El Gringuito — generado 2026-10-27 02:03
-window.JR_VERSION = "2026-10-27 02:03";
-window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493810000000","whatsapp_ver":"381 000-0000","alias":"COMPLETAR.ALIAS","link_mp":"","prefijo":"GR-"};
+// Librería El Gringuito — generado 2026-10-27 12:16
+window.JR_VERSION = "2026-10-27 12:16";
+window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493816307688","whatsapp_ver":"381 630-7688","alias":"LSALVADOR.NX","link_mp":"","prefijo":"GR-"};
 
 
-const CART_PHONE = "5493810000000";
+const CART_PHONE = "5493816307688";
 
 // Escapa texto antes de insertarlo como HTML.
 // Los nombres de producto vienen de sitios externos: si uno trae
@@ -269,7 +269,7 @@ document.getElementById("btnShareCart").addEventListener("click", () => {
     "Ver catálogo completo:",
     "https://jr93-arg.github.io/WEB-EL-GRINGUITO/"
   ].join("\n");
-  window.open("https://wa.me/5493810000000?text="+encodeURIComponent(msg),"_blank");
+  window.open("https://wa.me/5493816307688?text="+encodeURIComponent(msg),"_blank");
 });
 
 document.getElementById("btnCheckout").addEventListener("click", () => {
@@ -853,7 +853,7 @@ function habilitarConfirmacionMP() {
 }
 
 document.getElementById("btnCopyAlias").addEventListener("click", () => {
-  navigator.clipboard.writeText((document.getElementById("aliasTransferencia")||{}).textContent || "COMPLETAR.ALIAS").then(() => {
+  navigator.clipboard.writeText((document.getElementById("aliasTransferencia")||{}).textContent || "LSALVADOR.NX").then(() => {
     const b=document.getElementById("btnCopyAlias");
     b.textContent="✓ Copiado"; setTimeout(()=>b.textContent="Copiar",1500);
   });
@@ -2362,7 +2362,7 @@ function renderCredito() {
       " | Trabajo: " + trabajo +
       " || Adjunto fotos de DNI frente y dorso, boleta de servicio y comprobante de ingresos."
     );
-    window.open("https://wa.me/5493810000000?text=" + msg, "_blank");
+    window.open("https://wa.me/5493816307688?text=" + msg, "_blank");
   };
 }
 
