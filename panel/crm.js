@@ -1037,7 +1037,7 @@
       .t{display:flex;justify-content:space-between;font-size:20px;font-weight:700;border-top:2px solid #10281a;padding-top:12px}
       .cab{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:4px solid #ec2f86;padding-bottom:14px;margin-bottom:20px}
       @media print{body{margin:0}}</style></head><body>
-      <div class="cab"><div><h1>Librería El Gringuito</h1><div class="s">Tucumán, Argentina · jr93-arg.github.io/WEB-EL-GRINGUITO</div></div>
+      <div class="cab"><div><h1>Librería El Gringuito</h1><div class="s">Tucumán, Argentina · www.elgringuito.com</div></div>
         <div style="text-align:right"><b style="font-size:18px">Presupuesto ${esc(p.numero)}</b><div class="s">${esc(fecha(p.creado_en, false))}</div></div></div>
       <div><b>Cliente:</b> ${esc(p.contacto)}</div>
       ${p.vence_en ? `<div class="s">Válido hasta ${esc(fecha(p.vence_en + "T12:00:00", false))}</div>` : ""}

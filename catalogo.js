@@ -1,6 +1,6 @@
-// Librería El Gringuito — generado 2026-11-01 00:38
-window.JR_VERSION = "2026-11-01 00:38";
-window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://jr93-arg.github.io/WEB-EL-GRINGUITO","whatsapp":"5493816307688","whatsapp_ver":"381 630-7688","alias":"LSALVADOR.NX","link_mp":"","prefijo":"GR-"};
+// Librería El Gringuito — generado 2026-11-10 19:19
+window.JR_VERSION = "2026-11-10 19:19";
+window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://www.elgringuito.com","whatsapp":"5493816307688","whatsapp_ver":"381 630-7688","alias":"LSALVADOR.NX","link_mp":"","prefijo":"GR-"};
 
 
 const CART_PHONE = "5493816307688";
@@ -267,7 +267,7 @@ document.getElementById("btnShareCart").addEventListener("click", () => {
     `*Total aprox: ${fmt(total)}* (pagando con transferencia)`,
     "",
     "Ver catálogo completo:",
-    "https://jr93-arg.github.io/WEB-EL-GRINGUITO/"
+    "https://www.elgringuito.com/"
   ].join("\n");
   window.open("https://wa.me/5493816307688?text="+encodeURIComponent(msg),"_blank");
 });
@@ -945,7 +945,7 @@ document.getElementById("btnEnviar").addEventListener("click", async () => {
       }
 
       var linkTracking = nroPedido
-        ? "https://jr93-arg.github.io/WEB-EL-GRINGUITO/seguimiento.html?pedido=" + nroPedido
+        ? "https://www.elgringuito.com/seguimiento.html?pedido=" + nroPedido
         : null;
       var subHTML = esMP
         ? "Tu pedido fue registrado.<br>Total a pagar: <strong>" + fmt(totalFinal) + "</strong>"
@@ -971,7 +971,7 @@ document.getElementById("btnEnviar").addEventListener("click", async () => {
             "Segui el estado de tu compra en:\n" + linkTracking + "\n\n" +
             "Total: " + fmt(totalFinal) + "\n" +
             "Cuando transfieras, envianos el comprobante desde aca:\n" +
-            "https://jr93-arg.github.io/WEB-EL-GRINGUITO/comprobante/?p=" + nroPedido + "\n\n" +
+            "https://www.elgringuito.com/comprobante/?p=" + nroPedido + "\n\n" +
             "Nos contactaremos para coordinar pago y entrega."
           );
           window.open("https://wa.me/" + tel.replace(/\D/g,"") + "?text=" + msgWA, "_blank");
@@ -1693,7 +1693,7 @@ function abrirProducto(dataStr) {
 
   var btnShare = document.getElementById("prodBtnShare");
   if (btnShare) {
-    var linkProd = "https://jr93-arg.github.io/WEB-EL-GRINGUITO/p/" + p.id + ".html";
+    var linkProd = "https://www.elgringuito.com/p/" + p.id + ".html";
     // Texto para estados y chats de WhatsApp: *negrita* y emojis, y el link al
     // final para que la vista previa muestre la foto. Se invita a comprar en
     // la web y no se habla de formas de pago. "Desde" porque el precio es el

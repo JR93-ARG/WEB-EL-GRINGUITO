@@ -112,7 +112,7 @@
     const cab = `
       <div class="crm-cab"><div><div class="crm-kick">TIENDA / COMPORTAMIENTO</div>
         <h1 class="crm-h1">Qué hace la gente en la tienda</h1>
-        <p class="crm-sub">Quién entra, qué mira, qué agrega al carrito y hasta dónde llega en el pedido. Solo jr93-arg.github.io/WEB-EL-GRINGUITO.</p></div>
+        <p class="crm-sub">Quién entra, qué mira, qué agrega al carrito y hasta dónde llega en el pedido. Solo www.elgringuito.com.</p></div>
         <div class="crm-acc"><div class="k-seg" role="group" aria-label="Período">${RANGOS.map(([c, n]) =>
           `<button data-rango-t="${c}" class="${r.rango === c ? "on" : ""}">${n}</button>`).join("")}</div></div></div>`;
 
@@ -215,7 +215,7 @@
       </div>
 
       <p class="tienda-pie">Se mide desde el ${esc(desdeTxt)}. No se guarda nombre, teléfono, mail ni IP: cada visita es un código al azar que vive solo en esa pestaña.
-        Para que tus propias visitas no cuenten, abrí la tienda una vez con <code>#nomedir</code> al final de la dirección (por ejemplo <code>jr93-arg.github.io/WEB-EL-GRINGUITO/#nomedir</code>) en cada navegador que uses; con <code>#medir</code> se vuelve a activar.</p>`;
+        Para que tus propias visitas no cuenten, abrí la tienda una vez con <code>#nomedir</code> al final de la dirección (por ejemplo <code>www.elgringuito.com/#nomedir</code>) en cada navegador que uses; con <code>#medir</code> se vuelve a activar.</p>`;
   }
 
   window.TIENDA = { abrir };

@@ -540,7 +540,7 @@ main{max-width:920px;margin:0 auto;padding:14px 13px 40px}
 <div id="modal" class="oculto"></div>
 <script>
 const API = "https://gringuito-api-production.up.railway.app";
-const SITIO = "https://jr93-arg.github.io/WEB-EL-GRINGUITO";
+const SITIO = "https://www.elgringuito.com";
 const CLAVE_TOKEN = "jrPanelToken";
 
 let token   = localStorage.getItem(CLAVE_TOKEN) || "";
@@ -2407,7 +2407,7 @@ function dibujarBeneficios(x, ancho, y, h, color) {
   const w2t = x.measureText("Envíos a").width;
   const w3t = x.measureText("381 630-7688").width;
   x.font = `500 ${fsSub}px ${TEMA.font}`;
-  const w1s = x.measureText("jr93-arg.github.io/WEB-EL-GRINGUITO").width;
+  const w1s = x.measureText("www.elgringuito.com").width;
   const w2s = x.measureText("todo el país").width;
   const w3s = x.measureText("Comprá por WhatsApp").width;
 
@@ -2433,7 +2433,7 @@ function dibujarBeneficios(x, ancho, y, h, color) {
   x.fillText("El Gringuito", px, yTit);
   x.fillStyle = TEMA.muted;
   x.font = `500 ${fsSub}px ${TEMA.font}`;
-  x.fillText("jr93-arg.github.io/WEB-EL-GRINGUITO", px, ySub);
+  x.fillText("www.elgringuito.com", px, ySub);
   px += Math.max(w1t, w1s) + hueco;
 
   // ── Envíos ──
