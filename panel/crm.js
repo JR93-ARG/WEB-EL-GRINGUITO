@@ -14,7 +14,7 @@
     { id: "consulta_nueva", nombre: "Consulta nueva", linea: "#94a3a0" },
     { id: "presupuestado",  nombre: "Presupuestado",  linea: "#3f6fb5" },
     { id: "en_seguimiento", nombre: "En seguimiento", linea: "#0d9488" },
-    { id: "aceptado",       nombre: "Aceptado",       linea: "#ec2f86" },
+    { id: "aceptado",       nombre: "Aceptado",       linea: "#1e8fe1" },
     { id: "perdido",        nombre: "Perdido",        linea: "#b3261e" },
   ];
   const ABIERTAS = ["consulta_nueva", "presupuestado", "en_seguimiento"];
@@ -82,8 +82,8 @@
 
   const css = `
   .crm, .crm-ficha{
-    --k-tinta:#10281a; --k-tinta2:#1b3d29; --k-verde:#ec2f86; --k-verde2:#e8267d; --k-menta:#ffe0ef;
-    --k-claro:#fff0f7; --k-linea:#dce7df; --k-linea2:#eaf1ec; --k-fondo:#f4f8f5; --k-suave:#5f7066;
+    --k-tinta:#10281a; --k-tinta2:#1b3d29; --k-verde:#1e8fe1; --k-verde2:#1a7fd0; --k-menta:#dcefff;
+    --k-claro:#eef8ff; --k-linea:#dce7df; --k-linea2:#eaf1ec; --k-fondo:#f4f8f5; --k-suave:#5f7066;
     --k-texto:#33453a; --k-nar:#c2410c; --k-nar-bg:#ffedd5; --k-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   body.en-crm main{max-width:1500px}
@@ -108,7 +108,7 @@
     font:600 14px inherit;cursor:pointer;border:1px solid var(--k-linea);background:#fff;color:var(--k-tinta);text-decoration:none}
   .k-btn:hover{background:var(--k-claro);border-color:#b9d3c3}
   .k-btn.pri{background:var(--k-verde);border-color:var(--k-verde);color:#fff}
-  .k-btn.pri:hover{background:#b8136a}
+  .k-btn.pri:hover{background:#0e5fa8}
   .k-btn.osc{background:var(--k-tinta);border-color:var(--k-tinta);color:#fff}
   .k-btn.osc:hover{background:var(--k-tinta2)}
   .k-btn.wa{background:#25D366;border-color:#25D366;color:#fff}
@@ -143,7 +143,7 @@
   .k-kpi.osc::before{background:#4ade80}
   .k-kpi.osc .l{color:#a7c4b2}.k-kpi.osc .v{color:#fff}.k-kpi.osc .nt{color:#c9dccf}
   .k-delta{display:inline-block;font:600 11px var(--k-mono);padding:2px 8px;border-radius:10px;margin-right:6px}
-  .k-delta.sube{background:var(--k-menta);color:#1f2a5c}.k-delta.baja{background:#fee2e2;color:#991b1b}.k-delta.igual{background:#eef2ef;color:var(--k-suave)}
+  .k-delta.sube{background:var(--k-menta);color:#0b4f9c}.k-delta.baja{background:#fee2e2;color:#991b1b}.k-delta.igual{background:#eef2ef;color:var(--k-suave)}
   .k-nar{color:var(--k-nar);font-weight:700}
 
   /* Barras */
@@ -162,7 +162,7 @@
   .k-fila .fx{flex:1;min-width:0}
   .k-pill{font:600 11px var(--k-mono);padding:3px 9px;border-radius:10px;background:#eef2ef;color:var(--k-texto);white-space:nowrap;display:inline-block}
   .k-pill.nar{background:var(--k-nar-bg);color:#9a3412}
-  .k-pill.ver{background:var(--k-menta);color:#1f2a5c}
+  .k-pill.ver{background:var(--k-menta);color:#0b4f9c}
   .k-pill.azul{background:#e3ebf6;color:#1f4b8a}
   .k-pill.osc{background:var(--k-tinta);color:#fff}
   .k-pill.punteado{background:#fff;border:1px dashed #a9bdb0}
@@ -193,7 +193,7 @@
   .k-op .px.nar{color:var(--k-nar);font-weight:600}
   .k-op .px svg{flex:none}
   .k-col-vacia{font-size:12px;color:var(--k-suave);text-align:center;padding:22px 6px}
-  .t-rep{background:#e3ebf6;color:#1f4b8a}.t-ven{background:var(--k-menta);color:#1f2a5c}
+  .t-rep{background:#e3ebf6;color:#1f4b8a}.t-ven{background:var(--k-menta);color:#0b4f9c}
   .t-man{background:#fef3c7;color:#854d0e}.t-sis{background:#ede9fe;color:#5b21b6}
 
   /* Contactos */
@@ -208,7 +208,7 @@
   .k-tabla td{padding:11px 14px;border-bottom:1px solid var(--k-linea2);font-size:14px;vertical-align:middle}
   .k-tabla tr.fi{cursor:pointer}.k-tabla tr.fi:hover td{background:var(--k-claro)}
   .k-tabla tr:last-child td{border-bottom:none}
-  .k-ava{width:34px;height:34px;border-radius:50%;background:var(--k-menta);color:#1f2a5c;display:flex;align-items:center;
+  .k-ava{width:34px;height:34px;border-radius:50%;background:var(--k-menta);color:#0b4f9c;display:flex;align-items:center;
     justify-content:center;font-size:12px;font-weight:700;flex:none}
   .k-ava.cuad{border-radius:10px;width:58px;height:58px;font:600 20px var(--k-mono);background:var(--k-tinta);color:#fff}
   .k-lista-m{display:none}
@@ -244,7 +244,7 @@
   .f-ev .cuerpo{padding-bottom:16px}
   .k-etapas{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:10px 0 6px}
   .k-etapas button{height:26px;border:none;border-radius:4px;background:#e3ece6;color:var(--k-suave);font-size:9.5px;font-weight:700;cursor:pointer;line-height:1.1;padding:0 2px}
-  .k-etapas button.pasada{background:#a7d8b6;color:#1f2a5c}
+  .k-etapas button.pasada{background:#a7d8b6;color:#0b4f9c}
   .k-etapas button.actual{background:var(--k-verde2);color:#fff}
   .k-etapas button.actual.perdido{background:#dc2626}
   .k-tot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
@@ -1035,7 +1035,7 @@
       th{text-align:left;font-size:11px;letter-spacing:.06em;color:#5f7066;border-bottom:2px solid #10281a;padding:8px 6px;text-transform:uppercase}
       td{padding:10px 6px;border-bottom:1px solid #dce7df;vertical-align:top}small{color:#5f7066}
       .t{display:flex;justify-content:space-between;font-size:20px;font-weight:700;border-top:2px solid #10281a;padding-top:12px}
-      .cab{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:4px solid #ec2f86;padding-bottom:14px;margin-bottom:20px}
+      .cab{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:4px solid #1e8fe1;padding-bottom:14px;margin-bottom:20px}
       @media print{body{margin:0}}</style></head><body>
       <div class="cab"><div><h1>Librería El Gringuito</h1><div class="s">Tucumán, Argentina · www.elgringuito.com</div></div>
         <div style="text-align:right"><b style="font-size:18px">Presupuesto ${esc(p.numero)}</b><div class="s">${esc(fecha(p.creado_en, false))}</div></div></div>

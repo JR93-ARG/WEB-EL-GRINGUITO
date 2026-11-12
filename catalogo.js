@@ -1,5 +1,5 @@
-// Librería El Gringuito — generado 2026-11-12 02:26
-window.JR_VERSION = "2026-11-12 02:26";
+// Librería El Gringuito — generado 2026-11-12 02:42
+window.JR_VERSION = "2026-11-12 02:42";
 window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://www.elgringuito.com","whatsapp":"5493816307688","whatsapp_ver":"381 630-7688","alias":"LSALVADOR.NX","link_mp":"","prefijo":"GR-"};
 
 
@@ -103,7 +103,7 @@ function addToCartFromBtn(btn) {
   btn.dataset.textoOriginal = textoOriginal;
 
   btn.innerHTML = "✓";
-  btn.style.background = "#e8267d";
+  btn.style.background = "#1a7fd0";
   btn.style.color = "#fff";
 
   setTimeout(function() {
@@ -208,8 +208,8 @@ function renderCart() {
         <div class="cart-item-info">
           <div class="cart-item-name">${ii.name}</div>
           <div class="cart-item-unit">
-            <s>${fmt(ii.price)}</s> → <span style="color:#e8267d;font-weight:700">${fmt(precioDesc)}</span> c/u
-            <span style="color:#e8267d;font-size:10px">(${pctI}% off transf.)</span>
+            <s>${fmt(ii.price)}</s> → <span style="color:#1a7fd0;font-weight:700">${fmt(precioDesc)}</span> c/u
+            <span style="color:#1a7fd0;font-size:10px">(${pctI}% off transf.)</span>
           </div>
           <div class="cart-item-subtotal">${fmt(ii.price * ii.qty)}</div>
         </div>
@@ -234,7 +234,7 @@ function renderCart() {
   const descEl = document.getElementById("cartDescuento");
   if (descEl) {
     if (cart.length && descuento > 0) {
-      descEl.innerHTML = '<div style="font-size:11px;color:#e8267d;text-align:right;margin-top:2px">'
+      descEl.innerHTML = '<div style="font-size:11px;color:#1a7fd0;text-align:right;margin-top:2px">'
         + 'Con transferencia: ' + fmt(totalTransf)
         + ' <span style="color:#aaa">(' + pctTexto + '% off)</span></div>';
     } else {
@@ -760,14 +760,14 @@ function actualizarPaso4() {
     return '<div class="resumen-linea" style="font-size:12px">' +
       '<span>' + i.qty + 'x ' + i.name + '</span>' +
       '<span style="text-align:right"><s style="color:#bbb">' + fmt(i.price*i.qty) + '</s><br>' +
-      '<span style="color:#e8267d">' + fmt(precI*i.qty) + ' (' + pctI + '% off)</span></span></div>';
+      '<span style="color:#1a7fd0">' + fmt(precI*i.qty) + ' (' + pctI + '% off)</span></span></div>';
   }).join("");
 
   document.getElementById("resumenFinal").innerHTML =
     lineasDetalle +
     '<div style="height:1px;background:#e0e0e0;margin:6px 0"></div>' +
     '<div class="resumen-linea"><span>Subtotal lista</span><span>' + fmt(subtotal) + '</span></div>' +
-    '<div class="resumen-linea descuento"><span>Descuento transferencia (' + pctTexto + '%)</span><span style="color:#e8267d">-' + fmt(descuento) + '</span></div>' +
+    '<div class="resumen-linea descuento"><span>Descuento transferencia (' + pctTexto + '%)</span><span style="color:#1a7fd0">-' + fmt(descuento) + '</span></div>' +
     '<div class="resumen-linea envio"><span>Envio</span><span>' + envioTxt + '</span></div>';
 
   // Transferencia: precio catálogo - descuento proporcional
@@ -812,7 +812,7 @@ function onComprobanteChange(input) {
   const img         = document.getElementById("comprobanteImg");
   const nombre      = document.getElementById("comprobanteNombre");
 
-  area.style.borderColor = "#e8267d";
+  area.style.borderColor = "#1a7fd0";
   placeholder.style.display = "none";
   preview.style.display     = "block";
   nombre.textContent        = file.name;
@@ -1587,7 +1587,7 @@ function abrirProducto(dataStr) {
   if (ahorroEl && p.precioCatalogo && p.precioConDesc) {
     var ahorro = p.precioCatalogo - p.precioConDesc;
     ahorroEl.innerHTML =
-      '<span style="display:inline-flex;align-items:center;gap:5px;background:#ffe0ef;color:#b8136a;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700">'
+      '<span style="display:inline-flex;align-items:center;gap:5px;background:#dcefff;color:#0e5fa8;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700">'
       + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
       + 'Ahorrás ' + fmtMV(ahorro) + ' (' + (p.pctIndTexto||5) + '% off) con transferencia'
       + '</span>';
@@ -1662,7 +1662,7 @@ function abrirProducto(dataStr) {
     else cart.push({key:key,id:p.id,name:p.name,price:p.precioCatalogo,reqMin:p.reqMin,baseUnits:p.baseUnits,pv:p.pv||"",qty:n});
     saveCart();
     btnAgregar.innerHTML = "&#10003; Agregado (" + n + ")";
-    btnAgregar.style.background = "#e8267d";
+    btnAgregar.style.background = "#1a7fd0";
     setTimeout(function(){ btnAgregar.innerHTML = HTML_ADD; btnAgregar.style.background=""; }, 1600);
   };
 
@@ -2296,9 +2296,9 @@ function renderCredito() {
       '<div style="font-size:12px;color:#854F0B;margin-bottom:2px;font-weight:600">Pagás hoy (anticipo ' + creditoAntPct + '%)</div>' +
       '<div style="font-size:28px;font-weight:800;color:#111">' + fmtC(r.anticipo) + '</div>' +
     '</div>' +
-    '<div style="background:#fff0f7;border:1px solid #e8267d;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
-      '<div style="font-size:12px;color:#b8136a;margin-bottom:2px;font-weight:600">Tu cuota mensual</div>' +
-      '<div style="font-size:28px;font-weight:800;color:#e8267d">' + fmtC(r.cuota) + '</div>' +
+    '<div style="background:#eef8ff;border:1px solid #1a7fd0;border-radius:12px;padding:14px;text-align:center;margin-bottom:8px">' +
+      '<div style="font-size:12px;color:#0e5fa8;margin-bottom:2px;font-weight:600">Tu cuota mensual</div>' +
+      '<div style="font-size:28px;font-weight:800;color:#1a7fd0">' + fmtC(r.cuota) + '</div>' +
       '<div style="font-size:11px;color:#888">x ' + creditoCuotasSel + ' cuotas · 6% interés mensual sobre saldo</div>' +
     '</div>' +
     '<div style="background:#f9f9f9;border-radius:10px;padding:10px;text-align:center">' +
@@ -2947,7 +2947,7 @@ setTimeout(agregarBadgesSociales, 2000);
   function confeti() {
     var cont = document.createElement("div");
     cont.className = "fx-conf";
-    var col = ["#ff6fae", "#e8267d", "#ffd23f", "#facc15", "#fb923c", "#38bdf8", "#f472b6"];
+    var col = ["#4fb3f5", "#1a7fd0", "#ffe234", "#facc15", "#fb923c", "#38bdf8", "#f472b6"];
     var ancho = window.innerWidth || 400;
     for (var i = 0; i < 46; i++) {
       var p = document.createElement("i");

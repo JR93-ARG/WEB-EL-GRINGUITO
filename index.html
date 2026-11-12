@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#1E8FE1">
 
   <!-- ── SEO principal ── -->
   <title>Librería El Gringuito — Tienda online</title>
@@ -34,7 +36,7 @@
   <link rel="stylesheet" href="catalogo.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fredoka:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="tema.css?v=1794450381517">
+  <link rel="stylesheet" href="tema.css?v=1794451382443">
   <script>
     // Va acá y no en catalogo.js porque las imágenes que fallan disparan su
     // onerror mientras se parsea el HTML, antes de que cargue el script del
@@ -63,7 +65,7 @@ window.CATALOGO_INDEX = JSON.parse(b64ToUtf8("W3siaWQiOiJHUi0zMjU2MyIsIm5hbWUiOi
 window.DESCRIPCIONES  = JSON.parse(b64ToUtf8("e30="));
 // Ranking de vistas acumuladas. Se calcula al generar el sitio: asi el
 // catalogo no necesita pedirlo a la API con un token expuesto.
-window.VISTAS_TOP     = {"GR-06265":2,"GR-89527":1,"GR-51648":1,"GR-32563":1,"GR-07786":1};
+window.VISTAS_TOP     = {"GR-06265":2,"GR-07786":1,"GR-89527":1,"GR-51648":1,"GR-32563":1};
 </script>
 
 <!-- ══ BARRA SUPERIOR ══ -->
@@ -12021,7 +12023,7 @@ window.VISTAS_TOP     = {"GR-06265":2,"GR-89527":1,"GR-51648":1,"GR-32563":1,"GR
               <div id="comprobantePreview" style="display:none">
                 <img id="comprobanteImg" style="max-width:100%;max-height:180px;border-radius:8px;object-fit:contain">
                 <div id="comprobanteNombre" style="font-size:11px;color:#555;margin-top:6px"></div>
-                <div style="font-size:11px;color:#e8267d;margin-top:4px">✓ Comprobante adjunto</div>
+                <div style="font-size:11px;color:#1a7fd0;margin-top:4px">✓ Comprobante adjunto</div>
               </div>
             </div>
             <input type="file" id="inpComprobante" accept="image/*,.pdf" style="display:none" onchange="onComprobanteChange(this)">
@@ -12033,7 +12035,7 @@ window.VISTAS_TOP     = {"GR-06265":2,"GR-89527":1,"GR-51648":1,"GR-32563":1,"GR
             💳 Ir a pagar con Mercado Pago — <span id="montoBtnMP"></span>
           </a>
           <div id="mpPagado" style="display:none;margin-top:10px">
-            <div style="background:#fff0f7;border:1px solid #e8267d;border-radius:10px;padding:12px;font-size:13px;color:#e8267d;text-align:center">
+            <div style="background:#eef8ff;border:1px solid #1a7fd0;border-radius:10px;padding:12px;font-size:13px;color:#1a7fd0;text-align:center">
               ✓ Ya realicé el pago por Mercado Pago
             </div>
           </div>
@@ -12057,7 +12059,7 @@ window.VISTAS_TOP     = {"GR-06265":2,"GR-89527":1,"GR-51648":1,"GR-32563":1,"GR
           <div class="confirm-icon">✅</div>
           <div class="confirm-title">¡Pedido confirmado!</div>
           <div class="confirm-sub" id="confirmSub"></div>
-          <div style="background:#fff0f7;border:1px solid #ffd23f;border-radius:12px;padding:14px;margin-top:4px;text-align:left;font-size:13px;color:#b8136a;line-height:1.7">
+          <div style="background:#eef8ff;border:1px solid #ffe234;border-radius:12px;padding:14px;margin-top:4px;text-align:left;font-size:13px;color:#0e5fa8;line-height:1.7">
             Nos estaremos contactando a la brevedad para coordinar el pago y la entrega de tu pedido.
           </div>
 
@@ -12070,10 +12072,10 @@ window.VISTAS_TOP     = {"GR-06265":2,"GR-89527":1,"GR-51648":1,"GR-32563":1,"GR
               N° de pedido: <strong class="tracking-nro"></strong>
             </div>
             <a class="tracking-link" href="#" target="_blank"
-               style="font-size:11px;color:#19b4e8;word-break:break-all;display:block;margin-bottom:10px"></a>
+               style="font-size:11px;color:#0e5fa8;word-break:break-all;display:block;margin-bottom:10px"></a>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="tracking-copy"
-                style="background:#19b4e8;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">
+                style="background:#0e5fa8;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">
                 Copiar link
               </button>
               <button class="tracking-wa"

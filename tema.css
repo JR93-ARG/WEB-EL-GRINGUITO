@@ -1,211 +1,220 @@
 /* ============================================================
    Tema "librería" — Librería El Gringuito
-   Se carga DESPUÉS de catalogo.css y le cambia la impronta:
-   hoja cuadriculada, resaltadores, notas adhesivas y botones
-   tipo sticker con borde de marcador.
+   Se carga DESPUÉS de catalogo.css. Sale del logo: el cielo
+   celeste con nubes, las letras azules con contorno de tinta,
+   el subrayado amarillo de "Librería" y la letra a mano de
+   "Todo en un solo lugar". Lo llamativo está en un solo lugar
+   (la portada es el cielo del logo); el resto acompaña.
    ============================================================ */
 :root{
-  --tinta-marcador:#1d1b2e;
-  --rosa:#ec2f86; --rosa-claro:#ffe0ef;
-  --amarillo:#ffd23f; --amarillo-claro:#fff6cc;
-  --celeste:#19b4e8; --celeste-claro:#dff4fd;
-  --lila:#a78bfa; --lila-claro:#efe9ff;
-  --durazno:#ffb38a; --menta:#5fd3b3;
-  --navy:#1f2a5c;
-  --sticker:3px 3px 0 var(--tinta-marcador);
-  --sticker-hover:5px 5px 0 var(--tinta-marcador);
+  --tinta:#1b1b2f;              /* contorno del logo */
+  --cielo:#1e8fe1;              /* letras "Gringuito" */
+  --cielo-osc:#0b4f9c;
+  --cielo-noche:#0b3f7d;
+  --cielo-claro:#e3f3ff;
+  --cielo-medio:#bfe4ff;
+  --sol:#ffe234;                /* subrayado de "Librería" */
+  --sol-claro:#fff7c2;
+  --nube:#ffffff;
+  --chicle:#ec2f86;             /* solo para "Nuevo" */
+  --sticker:3px 3px 0 var(--tinta);
+  --sticker-hover:5px 5px 0 var(--tinta);
   --f-titulo:"Fredoka","Segoe UI",system-ui,sans-serif;
   --f-mano:"Caveat","Segoe Print",cursive;
-  --fondo:#fbfdff;
+  --fondo:#f7fbff;
+  --nubes:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 110' preserveAspectRatio='none'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='30' cy='92' r='44'/%3E%3Ccircle cx='108' cy='70' r='52'/%3E%3Ccircle cx='190' cy='88' r='40'/%3E%3Ccircle cx='262' cy='64' r='56'/%3E%3Ccircle cx='350' cy='86' r='44'/%3E%3Ccircle cx='430' cy='70' r='50'/%3E%3Ccircle cx='512' cy='90' r='42'/%3E%3Ccircle cx='590' cy='72' r='52'/%3E%3Crect y='92' width='640' height='18'/%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* ── Hoja de cuaderno ── */
+/* ── Hoja de cuaderno, en celeste muy suave ── */
 body{
   background-color:var(--fondo);
   background-image:
-    linear-gradient(rgba(25,180,232,.07) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(25,180,232,.07) 1px,transparent 1px);
+    linear-gradient(rgba(30,143,225,.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,143,225,.06) 1px,transparent 1px);
   background-size:26px 26px;
 }
 
-/* ── Barra superior: cinta washi de colores ── */
-.topbar{background:var(--navy);position:relative}
+/* ── Barra superior: cinta con los colores del logo ── */
+.topbar{background:var(--cielo-noche);position:relative}
 .topbar::after{
   content:"";position:absolute;left:0;right:0;bottom:-5px;height:5px;z-index:2;
   background:repeating-linear-gradient(90deg,
-    var(--rosa) 0 60px,var(--amarillo) 60px 120px,var(--celeste) 120px 180px,var(--lila) 180px 240px);
+    var(--sol) 0 70px,var(--nube) 70px 100px,var(--cielo) 100px 170px,var(--nube) 170px 200px);
 }
 
 /* ── Header ── */
-header{box-shadow:none;border-bottom:2px solid var(--tinta-marcador)}
+header{box-shadow:none;border-bottom:2px solid var(--tinta);background:#fff}
+.logo img{
+  height:68px;width:68px;
+  filter:drop-shadow(2px 3px 0 rgba(27,27,47,.18));
+}
 .logo-name{
-  font-family:var(--f-titulo);font-weight:700;font-size:26px;letter-spacing:.5px;
-  text-transform:uppercase;line-height:1;
+  font-family:var(--f-titulo);font-weight:700;font-size:26px;letter-spacing:.5px;line-height:1;
+  color:var(--cielo);-webkit-text-stroke:1.2px var(--tinta);paint-order:stroke fill;
 }
-.logo-name .lt{
-  display:inline-block;-webkit-text-stroke:1.2px var(--tinta-marcador);
-  paint-order:stroke fill;
-}
-.logo-name .lt:nth-child(4n+1){color:var(--celeste);transform:rotate(-4deg)}
-.logo-name .lt:nth-child(4n+2){color:var(--rosa);transform:rotate(3deg)}
-.logo-name .lt:nth-child(4n+3){color:var(--amarillo);transform:rotate(-2deg)}
-.logo-name .lt:nth-child(4n){color:var(--lila);transform:rotate(4deg)}
-.logo-name .lt.esp{width:.32em}
 .logo-tag{
-  font-family:var(--f-mano);font-size:16px;color:var(--navy);margin-top:3px;
-  background:linear-gradient(transparent 55%,var(--amarillo) 55% 90%,transparent 90%);
+  font-family:var(--f-mano);font-size:16px;color:var(--tinta);margin-top:3px;
+  background:linear-gradient(transparent 55%,var(--sol) 55% 90%,transparent 90%);
   display:inline-block;padding:0 4px;
 }
-.search-wrap input{border:2px solid var(--tinta-marcador);border-radius:14px 0 0 14px}
-.search-cat{border-top:2px solid var(--tinta-marcador);border-bottom:2px solid var(--tinta-marcador)}
+.search-wrap input{border:2px solid var(--tinta);border-radius:999px 0 0 999px;padding-left:18px}
+.search-wrap input:focus{outline:3px solid var(--cielo-medio);outline-offset:1px}
+.search-cat{border-top:2px solid var(--tinta);border-bottom:2px solid var(--tinta)}
 .search-go{
-  background:var(--amarillo);color:var(--tinta-marcador);
-  border:2px solid var(--tinta-marcador);border-radius:0 14px 14px 0;
+  background:var(--sol);color:var(--tinta);
+  border:2px solid var(--tinta);border-radius:0 999px 999px 0;
 }
-.search-go:hover{background:var(--rosa);color:#fff}
+.search-go:hover{background:var(--cielo);color:#fff}
 
 /* ── Navegación ── */
-.nav{border-top:none;border-bottom:2px dashed rgba(29,27,46,.18)}
+.nav{border-top:none;border-bottom:2px dashed rgba(27,27,47,.15)}
 .cat-dropdown-btn{
-  background:var(--rosa);border:2px solid var(--tinta-marcador);box-shadow:var(--sticker);
-  border-radius:14px;font-family:var(--f-titulo);letter-spacing:.4px;
+  background:var(--cielo);border:2px solid var(--tinta);box-shadow:var(--sticker);
+  border-radius:999px;font-family:var(--f-titulo);letter-spacing:.3px;text-transform:none!important;
 }
-.cat-dropdown-btn:hover{background:var(--celeste);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.cat-dropdown-btn:hover{background:var(--cielo-osc);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
 .nav-link{font-family:var(--f-titulo);font-weight:500;font-size:15px}
 .nav-link.active,.nav-link:hover{
-  color:var(--tinta-marcador);
-  background:linear-gradient(transparent 58%,var(--amarillo) 58% 92%,transparent 92%);
+  color:var(--tinta);
+  background:linear-gradient(transparent 58%,var(--sol) 58% 92%,transparent 92%);
 }
 
-/* ── Hero: acuarela clara en vez del bloque oscuro ── */
+/* ── Portada: el cielo del logo ──
+   Mismo celeste del fondo del logo, nubes blancas abajo como la
+   franja donde apoya el nombre. Así el logo queda "en su lugar". */
 .hero{
-  background:
-    radial-gradient(circle at 12% 20%,rgba(25,180,232,.28),transparent 42%),
-    radial-gradient(circle at 78% 85%,rgba(236,47,134,.22),transparent 45%),
-    radial-gradient(circle at 92% 10%,rgba(255,210,63,.35),transparent 38%),
-    #fff;
-  border:2.5px solid var(--tinta-marcador);box-shadow:6px 6px 0 var(--tinta-marcador);
-  border-radius:26px;
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#9fd6ff 0%,#c4e7ff 45%,#e6f5ff 100%);
+  border:2.5px solid var(--tinta);box-shadow:6px 6px 0 var(--cielo-osc);
+  border-radius:28px;
 }
-.hero::after{display:none}
+.hero::after{
+  content:"";display:block;position:absolute;left:-2%;right:-2%;bottom:-2px;height:96px;
+  top:auto;width:auto;border-radius:0;
+  background:var(--nubes) repeat-x bottom/640px 96px;z-index:0;pointer-events:none;
+}
+.hero-in,.hero-slider{position:relative;z-index:1}
+
+.hero-marca{display:flex;align-items:center;gap:18px;margin-bottom:10px}
+.hero-logo{
+  width:168px;height:168px;flex-shrink:0;border-radius:50%;
+  /* halo de nube: lo funde con el cielo en vez de pegarlo encima */
+  box-shadow:0 0 0 7px rgba(255,255,255,.75),0 10px 26px rgba(11,79,156,.22);
+}
 .hero-badge{
-  background:var(--amarillo);color:var(--tinta-marcador);border:none;backdrop-filter:none;
-  font-family:var(--f-mano);font-size:20px;font-weight:700;letter-spacing:0;
-  border-radius:3px;padding:6px 16px 8px;transform:rotate(-3deg);
-  box-shadow:0 6px 12px rgba(29,27,46,.15);position:relative;
+  background:var(--sol);color:var(--tinta);border:2px solid var(--tinta);backdrop-filter:none;
+  font-family:var(--f-mano);font-size:22px;font-weight:700;letter-spacing:0;text-transform:none;
+  border-radius:999px;padding:4px 16px 6px;box-shadow:var(--sticker);
 }
-.hero-badge::before{
-  content:"";position:absolute;top:-9px;left:50%;width:14px;height:14px;margin-left:-7px;
-  border-radius:50%;background:var(--celeste);border:2px solid var(--tinta-marcador);
-}
+.hero-badge::before{display:none}
 .hero-t{
-  font-family:var(--f-titulo);font-weight:700;color:var(--navy);
-  font-size:46px;letter-spacing:-.5px;line-height:1.08;
+  font-family:var(--f-titulo);font-weight:700;color:var(--cielo-noche);
+  font-size:48px;letter-spacing:-.3px;line-height:1.06;
 }
 .hero-t em{
-  color:var(--rosa);
-  background:linear-gradient(transparent 60%,var(--amarillo) 60% 92%,transparent 92%);
+  font-style:normal;color:var(--cielo);
+  -webkit-text-stroke:1.5px var(--tinta);paint-order:stroke fill;
+  background:linear-gradient(transparent 62%,var(--sol) 62% 94%,transparent 94%);
   padding:0 6px;
 }
-.hero-s{color:#4a4866;font-size:16px}
+.hero-s{color:#2c3a55;font-size:16px;max-width:46ch}
 .hero-b1{
-  background:#fff;color:var(--tinta-marcador);border:2px solid var(--tinta-marcador);
-  box-shadow:var(--sticker);border-radius:14px;font-family:var(--f-titulo);font-weight:600;
+  background:#fff;color:var(--tinta);border:2px solid var(--tinta);
+  box-shadow:var(--sticker);border-radius:999px;font-family:var(--f-titulo);font-weight:600;
 }
-.hero-b1:hover{background:var(--celeste-claro);border-color:var(--tinta-marcador);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.hero-b1:hover{background:var(--sol-claro);border-color:var(--tinta);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
 .hero-b2{
-  background:var(--rosa);color:#fff;border:2px solid var(--tinta-marcador);
-  box-shadow:var(--sticker);border-radius:14px;font-family:var(--f-titulo);font-weight:600;
+  background:var(--cielo);color:#fff;border:2px solid var(--tinta);
+  box-shadow:var(--sticker);border-radius:999px;font-family:var(--f-titulo);font-weight:600;
 }
-.hero-b2:hover{transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
-.hero-tr{color:var(--navy)}
-.hero-tr svg{opacity:1;color:var(--rosa)}
-.hero-tr-t{color:var(--navy);font-family:var(--f-titulo);font-size:13px}
-.hero-tr-s{color:#6b6987}
-.hero-slider{border:2.5px solid var(--tinta-marcador);box-shadow:6px 6px 0 var(--amarillo),6px 6px 0 2.5px var(--tinta-marcador);transform:rotate(1.5deg)}
-.hero-slide-off{background:var(--amarillo-claro);border-color:var(--amarillo);color:var(--tinta-marcador)}
+.hero-b2:hover{background:var(--cielo-osc);transform:translate(-1px,-1px);box-shadow:var(--sticker-hover)}
+.hero-trust{position:relative;z-index:1}
+.hero-tr{color:var(--cielo-noche)}
+.hero-tr svg{opacity:1;color:var(--cielo-osc)}
+.hero-tr-t{color:var(--cielo-noche);font-family:var(--f-titulo);font-size:13px}
+.hero-tr-s{color:#4a5a78}
+.hero-slider{
+  background:#fff;border:2.5px solid var(--tinta);border-radius:22px;
+  box-shadow:6px 6px 0 var(--sol),6px 6px 0 2.5px var(--tinta);
+}
+.hero-slide-precio{color:var(--cielo-noche);font-family:var(--f-titulo)}
+.hero-slide-off{background:var(--sol-claro);border-color:var(--sol);color:var(--tinta)}
+.hero-dot.on{background:var(--cielo)}
+.hero-b1:focus-visible,.hero-b2:focus-visible,.buy-btn:focus-visible,.cat-dropdown-btn:focus-visible{
+  outline:3px solid var(--sol);outline-offset:3px;
+}
 @media(max-width:768px){
-  .hero{box-shadow:4px 4px 0 var(--tinta-marcador)}
-  .hero-t{font-size:31px}
+  .hero{box-shadow:4px 4px 0 var(--cielo-osc);border-radius:22px}
+  .hero::after{height:64px;background-size:420px 64px}
+  .hero-marca{gap:12px}
+  .hero-logo{width:104px;height:104px;box-shadow:0 0 0 5px rgba(255,255,255,.75),0 6px 16px rgba(11,79,156,.2)}
+  .hero-badge{font-size:18px}
+  .hero-t{font-size:32px}
+  .logo img{height:52px;width:52px}
 }
 
-/* ── Categorías: círculos de colores como en el flyer ── */
-.cat-card{border:2px solid var(--tinta-marcador);border-radius:18px;box-shadow:var(--sticker)}
-.cat-card:hover{transform:translate(-2px,-3px) rotate(-1.5deg);box-shadow:var(--sticker-hover);border-color:var(--tinta-marcador)}
+/* ── Categorías: burbujas celestes y amarillas ── */
+.cat-card{border:2px solid var(--tinta);border-radius:20px;box-shadow:var(--sticker);background:#fff}
+.cat-card:hover{transform:translate(-2px,-3px);box-shadow:var(--sticker-hover);border-color:var(--tinta)}
 .cat-card-ic{
-  width:58px;height:58px;border-radius:50%;color:var(--tinta-marcador);
-  background:var(--rosa-claro);border:2px solid var(--tinta-marcador);
+  width:58px;height:58px;border-radius:50%;color:var(--cielo-noche);
+  background:var(--cielo-claro);border:2px solid var(--tinta);
 }
-.cats-grid .cat-card:nth-child(5n+2) .cat-card-ic{background:var(--amarillo-claro)}
-.cats-grid .cat-card:nth-child(5n+3) .cat-card-ic{background:var(--celeste-claro)}
-.cats-grid .cat-card:nth-child(5n+4) .cat-card-ic{background:var(--lila-claro)}
-.cats-grid .cat-card:nth-child(5n+5) .cat-card-ic{background:#ffe8dc}
-.cat-card-n{font-family:var(--f-titulo);font-size:13px;font-weight:600;color:var(--navy)}
-.cat-card.ver-todas{background:var(--amarillo)}
+.cats-grid .cat-card:nth-child(3n+2) .cat-card-ic{background:var(--sol-claro)}
+.cats-grid .cat-card:nth-child(3n+3) .cat-card-ic{background:#fff}
+.cat-card-n{font-family:var(--f-titulo);font-size:13px;font-weight:600;color:var(--cielo-noche)}
+.cat-card.ver-todas{background:var(--sol)}
 .cat-card.ver-todas .cat-card-ic{background:#fff}
-.cat-card.ver-todas .cat-card-n{color:var(--tinta-marcador)}
+.cat-card.ver-todas .cat-card-n{color:var(--tinta)}
 @media(max-width:640px){.cat-card-ic{width:40px;height:40px}}
 
-/* ── Beneficios: nota adhesiva ── */
-.benef-bar{background:var(--amarillo-claro);border:2px dashed var(--amarillo);border-radius:6px}
-.benef-ic{background:#fff;border:2px solid var(--tinta-marcador);color:var(--rosa)}
-.benef-t{color:var(--navy);font-family:var(--f-titulo)}
+/* ── Beneficios ── */
+.benef-bar{background:#fff;border:2px dashed var(--cielo-medio);border-radius:18px}
+.benef-ic{background:var(--cielo-claro);border:2px solid var(--tinta);color:var(--cielo-osc)}
+.benef-t{color:var(--cielo-noche);font-family:var(--f-titulo)}
 
-/* ── Títulos de sección: resaltador ── */
-.sec-t{font-family:var(--f-titulo);font-weight:700;color:var(--navy);font-size:27px;padding-bottom:0;z-index:0;display:inline-block}
+/* ── Títulos de sección: el subrayado amarillo de "Librería" ── */
+.sec-t{font-family:var(--f-titulo);font-weight:700;color:var(--cielo-noche);font-size:27px;padding-bottom:0;z-index:0;display:inline-block}
 .sec-t::after{
-  left:-6px;right:-6px;width:auto;bottom:2px;height:12px;z-index:-1;border-radius:3px;
-  background:var(--amarillo);transform:rotate(-1deg);opacity:.85;
+  left:-6px;right:-6px;width:auto;bottom:2px;height:12px;z-index:-1;border-radius:6px;
+  background:var(--sol);transform:rotate(-1deg);opacity:.9;
 }
-.sec-link{color:var(--rosa);font-family:var(--f-titulo)}
+.sec-link{color:var(--cielo-osc);font-family:var(--f-titulo)}
 .cat-title,.destacados-titulo,.novedades-titulo{
-  font-family:var(--f-mano);font-size:24px;font-weight:700;text-transform:none;letter-spacing:0;
-  color:var(--navy);border-left:none;padding-left:0;
+  font-family:var(--f-mano);font-size:26px;font-weight:700;text-transform:none;letter-spacing:0;
+  color:var(--cielo-noche);border-left:none;padding-left:0;
 }
-.cat-title::before,.destacados-titulo::before,.novedades-titulo::before{content:"✎ ";color:var(--rosa)}
-.cat-title::after{height:0;border-top:2px dashed rgba(29,27,46,.2);background:none}
+.cat-title::after{height:0;border-top:2px dashed rgba(27,27,47,.18);background:none}
 .destacados-wrap{
-  border:2px solid var(--tinta-marcador);border-radius:22px;
+  border:2px solid var(--tinta);border-radius:24px;
   background:linear-gradient(#fff,#fff) padding-box;box-shadow:var(--sticker);
 }
 
-/* ── Tarjetas de producto: stickers ── */
-.card{border:2px solid var(--tinta-marcador);border-radius:18px}
-.card:hover{transform:translate(-2px,-3px);box-shadow:var(--sticker-hover);border-color:var(--tinta-marcador)}
-.card-img{background:#fff;border-bottom:2px dashed rgba(29,27,46,.15)}
+/* ── Tarjetas de producto ── */
+.card{border:2px solid var(--tinta);border-radius:20px;background:#fff}
+.card:hover{transform:translate(-2px,-3px);box-shadow:var(--sticker-hover);border-color:var(--tinta)}
+.card-img{background:#fff;border-bottom:2px dashed rgba(27,27,47,.12)}
 .card-name{font-weight:600}
-.card-price{font-family:var(--f-titulo);font-weight:700;color:var(--navy)}
+.card-price{font-family:var(--f-titulo);font-weight:700;color:var(--cielo-noche)}
 .badge-nuevo{
-  background:var(--amarillo);color:var(--tinta-marcador);
-  font-family:var(--f-mano);font-size:15px;font-weight:700;text-transform:none;letter-spacing:0;
-  border-radius:2px;padding:2px 10px 3px;transform:rotate(-6deg);
-  box-shadow:0 3px 6px rgba(29,27,46,.18);
+  background:var(--chicle);color:#fff;
+  font-family:var(--f-titulo);font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;
+  border-radius:999px;padding:3px 10px;border:2px solid var(--tinta);
 }
 .buy-btn{
-  background:var(--rosa);border:2px solid var(--tinta-marcador);border-radius:12px;
+  background:var(--cielo);border:2px solid var(--tinta);border-radius:999px;
   font-family:var(--f-titulo);font-weight:600;
 }
-.buy-btn:hover{background:var(--celeste)}
+.buy-btn:hover{background:var(--cielo-osc)}
 
-/* ── Pie: azul del flyer ── */
+/* ── Pie: el azul profundo del contorno del logo ── */
 body > footer{
-  background:var(--navy);color:#fff;font-family:var(--f-titulo);font-size:13px;
-  border-top:5px solid var(--amarillo);padding:22px 20px 96px;text-align:center;line-height:1.9;
+  background:var(--cielo-noche);color:#fff;font-family:var(--f-titulo);font-size:13px;
+  border-top:5px solid var(--sol);padding:22px 20px 96px;text-align:center;line-height:1.9;
 }
-body > footer a{color:var(--amarillo);text-decoration:none;font-weight:600}
-body > footer .pie-mano{font-family:var(--f-mano);font-size:22px;color:var(--amarillo)}
+body > footer a{color:var(--sol);text-decoration:none;font-weight:600}
+body > footer .pie-mano{font-family:var(--f-mano);font-size:24px;color:var(--sol)}
 
-/* ── Logo (logo.png) ── */
-.logo img{height:60px;width:60px;filter:drop-shadow(2px 2px 0 var(--tinta-marcador))}
-.hero-marca{display:flex;align-items:center;gap:18px;margin-bottom:6px}
-.hero-logo{
-  width:150px;height:150px;flex-shrink:0;border-radius:50%;
-  filter:drop-shadow(4px 4px 0 var(--tinta-marcador));
-  transform:rotate(-6deg);transition:transform .3s;
-}
-.hero-logo:hover{transform:rotate(3deg) scale(1.04)}
-@media(max-width:768px){
-  .logo img{height:46px;width:46px}
-  .hero-marca{gap:12px}
-  .hero-logo{width:96px;height:96px}
+@media (prefers-reduced-motion:reduce){
+  .card,.cat-card,.hero-b1,.hero-b2,.cat-dropdown-btn{transition:none!important;transform:none!important}
 }
