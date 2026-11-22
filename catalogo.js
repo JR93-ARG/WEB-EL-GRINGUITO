@@ -1,5 +1,5 @@
-// Librería El Gringuito — generado 2026-11-21 16:10
-window.JR_VERSION = "2026-11-21 16:10";
+// Librería El Gringuito — generado 2026-11-22 16:12
+window.JR_VERSION = "2026-11-22 16:12";
 window.MARCA = window.MARCA || {"nombre":"Librería El Gringuito","nombre_corto":"El Gringuito","sitio":"https://www.elgringuito.com","whatsapp":"5493816307688","whatsapp_ver":"381 630-7688","alias":"LSALVADOR.NX","link_mp":"","prefijo":"GR-"};
 
 
